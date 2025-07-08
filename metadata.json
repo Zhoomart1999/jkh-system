@@ -1,0 +1,20 @@
+
+{
+  "name": "GIS Housing and Utilities KG",
+  "description": "A web application for a municipal utility management system (GIS Housing and Utilities) for water supply and garbage collection in Kyrgyzstan, featuring role-based access via a secure PIN.",
+  "requestFramePermissions": [
+    "camera"
+  ],
+  "icons": [
+    {
+      "src": "/icon-192x192.png",
+      "type": "image/png",
+      "sizes": "192x192"
+    },
+    {
+      "src": "/icon-512x512.png",
+      "type": "image/png",
+      "sizes": "512x512"
+    }
+  ]
+}
