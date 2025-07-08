@@ -1,6 +1,7 @@
 import { Role, User, Abonent, BuildingType, WaterTariffType, AbonentStatus, Tariffs, Payment, AuditLog, FinancialPlan, Accrual, AbonentHistory, PaymentSummary, ExpenseCategory, Expense, StaffSalary, FuelLog, MeterReading, TechnicalRequest, RequestType, RequestStatus, RequestTypeLabels, RequestStatusLabels, InfrastructureZone, ReceiptDetails, ReceiptChargeItem, CheckNoticeZoneGroup, CheckNoticeAbonent, PaymentMethod, CompanySettings, AdminDashboardData, Announcement, AccountantDashboardData, RecentTransaction, ControllerOverviewData, DebtorsReportItem, ExpenseReportData, InventoryItem, WorkOrderDetails, SystemNotification, SystemNotificationType, TurnoverSheetRow, CashierReportData, GISObject, GISObjectType, PlannedMaintenanceTask, MaintenanceStatus, WaterQualitySample, BankStatementTransaction, ReconciliationStatus, DebtCase, DebtStatus, AbonentPortalData, RequestPriority, RequestPriorityLabels, UsedMaterialReportItem, IncomeReportData, IncomeBreakdown, BankType, QRCodePayment, ManualCharge, BulkCharge, BankTransaction, Document, AbonentAppeal, DebtPaymentPlan, ActionLog, CheckClosingPayment, CheckClosing, CheckClosingFormData, CheckClosingSummary, TariffVersion } from '../types';
 
-const API_BASE_URL = 'http://localhost:3001/api';
+// API URL для разных окружений
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
 
 // Функция для выполнения HTTP запросов
 const apiRequest = async (endpoint: string, options: RequestInit = {}) => {
