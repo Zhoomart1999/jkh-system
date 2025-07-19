@@ -50,7 +50,7 @@ function createWindow() {
     
     if (isDev) {
         // В режиме разработки загружаем с Vite dev server
-        mainWindow.loadURL('http://localhost:5177');
+        mainWindow.loadURL('http://localhost:5175');
         // Открываем DevTools в режиме разработки
         mainWindow.webContents.openDevTools();
     } else {
@@ -127,7 +127,7 @@ function createWindow() {
                                 type: 'info',
                                 title: 'О приложении',
                                 message: 'ЖКХ Токмок - Система управления',
-                                detail: 'Версия 1.0.0\nСистема управления жилищно-коммунальным хозяйством города Токмок\n\nРоли пользователей:\n• Админ: 1111\n• Инженер: 2222\n• Бухгалтер: 3333\n• Контролер: 4444'
+                                detail: 'Версия 1.0.0\nСистема управления жилищно-коммунальным хозяйством города Токмок\n\nРоли пользователей:\n• Админ: 11111111\n• Инженер: 22222222\n• Бухгалтер: 33333333\n• Контролер: 44444444'
                             });
                         }
                     }
@@ -150,7 +150,7 @@ function createWindow() {
         if (isDev) {
             // В режиме разработки пытаемся перезагрузить
             setTimeout(() => {
-                mainWindow.loadURL('http://localhost:5177');
+                mainWindow.loadURL('http://localhost:5175');
             }, 1000);
         }
     });

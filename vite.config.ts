@@ -13,7 +13,7 @@ export default defineConfig(({ mode }) => {
       },
     },
     server: {
-      port: 5173,
+      port: 5173, // Должен совпадать с портом в electron/main.cjs
       host: true,
     },
     build: {
