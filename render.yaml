@@ -2,7 +2,7 @@ services:
   - type: web
     name: jkh-backend
     env: node
-    buildCommand: npm install
+    buildCommand: npm install && npm run build
     startCommand: node server.mjs
     envVars:
       - key: NODE_ENV
