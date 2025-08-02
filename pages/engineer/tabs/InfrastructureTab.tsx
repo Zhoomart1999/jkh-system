@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import Card from '../../../components/ui/Card';
 import Modal from '../../../components/ui/Modal';
-import { api } from '../../../services/api';
+import { api } from "../../../services/mock-api"
 import { InfrastructureZone } from '../../../types';
 import { MapPinIcon, SaveIcon } from '../../../components/ui/Icons';
 

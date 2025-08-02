@@ -1,55 +1,94 @@
 
-import React, { createContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User, Role } from '../types';
-import { api } from '../services/api';
+import { usersApi } from '../src/firebase/api';
 
 interface AuthContextType {
   user: User | null;
-  loading: boolean;
-  login: (pin: string) => Promise<User | null>;
+  setUser: (user: User) => void;
+  login: (pin: string) => Promise<boolean>;
   logout: () => void;
+  loading: boolean;
 }
 
-export const AuthContext = createContext<AuthContextType | null>(null);
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (context === undefined) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
+};
+
+interface AuthProviderProps {
+  children: React.ReactNode;
+}
+
+export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // Проверяем сохраненного пользователя при загрузке
   useEffect(() => {
-    // Check for a logged-in user in localStorage on initial load
-    const storedUser = localStorage.getItem('gis-user');
-    if (storedUser) {
-      setUser(JSON.parse(storedUser));
+    const savedUser = localStorage.getItem('user');
+    if (savedUser) {
+      try {
+        const parsedUser = JSON.parse(savedUser);
+        if (parsedUser && parsedUser.role) {
+          setUser(parsedUser);
+        }
+      } catch (error) {
+        console.error('Error parsing saved user:', error);
+        localStorage.removeItem('user');
+      }
     }
     setLoading(false);
   }, []);
 
-  const login = useCallback(async (pin: string) => {
-    setLoading(true);
+  // Функция входа с Firebase
+  const login = async (pin: string): Promise<boolean> => {
     try {
-      const loggedInUser = await api.loginWithPin(pin);
-      if (loggedInUser) {
-        setUser(loggedInUser);
-        localStorage.setItem('gis-user', JSON.stringify(loggedInUser));
-        return loggedInUser;
+      setLoading(true);
+      
+      // Ищем пользователя в Firestore по PIN
+      const userData = await usersApi.getUserByPin(pin);
+      
+      if (!userData) {
+        return false;
       }
-      return null;
+
+      // Устанавливаем пользователя
+      setUser(userData);
+      localStorage.setItem('user', JSON.stringify(userData));
+      
+      return true;
+    } catch (error) {
+      return false;
     } finally {
       setLoading(false);
     }
-  }, []);
+  };
 
-  const logout = useCallback(() => {
+  // Функция выхода
+  const logout = () => {
     setUser(null);
-    localStorage.removeItem('gis-user');
-  }, []);
+    localStorage.removeItem('user');
+  };
 
-  const value = { user, loading, login, logout };
+  const value: AuthContextType = {
+    user,
+    setUser,
+    login,
+    logout,
+    loading
+  };
 
   return (
     <AuthContext.Provider value={value}>
-      {!loading && children}
+      {children}
     </AuthContext.Provider>
   );
 };
+
+export { AuthContext };

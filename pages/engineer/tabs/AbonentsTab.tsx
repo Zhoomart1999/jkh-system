@@ -1,31 +1,106 @@
 import React, { useState, useEffect, useMemo, useContext } from 'react';
-import { api } from '../../../services/api';
+import { api } from "../../../services/mock-api"
 import { Abonent, AbonentHistory, AbonentStatus, BuildingType, WaterTariffType, User, Role, ReceiptDetails, CheckNoticeZoneGroup, PaymentMethod, QRCodePayment } from '../../../types';
 import Card from '../../../components/ui/Card';
 import Modal, { ConfirmationModal } from '../../../components/ui/Modal';
 import Pagination from '../../../components/ui/Pagination';
 import ToggleSwitch from '../../../components/ui/ToggleSwitch';
-import { EditIcon, FileTextIcon, PrinterIcon, SaveIcon, ReceiptIcon } from '../../../components/ui/Icons';
+import { EditIcon, FileTextIcon, PrinterIcon, SaveIcon, ReceiptIcon, DownloadIcon } from '../../../components/ui/Icons';
 import { CheckNoticeTemplate } from './CheckNoticeTemplate';
 import { AuthContext } from '../../../context/AuthContext';
 import PrintProvider from '../../../components/ui/PrintProvider';
 import { receiptTemplates, ReceiptTemplateKey } from '../../../components/templates';
+import { downloadReceiptPDF } from '../../../utils/pdfGenerator';
 
 const ITEMS_PER_PAGE = 10;
 const formatDate = (dateString: string | null | undefined) => dateString ? new Date(dateString).toLocaleDateString('ru-RU') : 'N/A';
-const formatCurrency = (amount: number) => `${amount.toLocaleString('ru-RU', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+const formatCurrency = (amount: number | undefined) => {
+  if (amount === undefined || amount === null) return '0.00';
+  return `${amount.toLocaleString('ru-RU', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+};
 
 const RECEIPT_PRINT_STYLE = `
     @media print {
-        body { -webkit-print-color-adjust: exact; color-adjust: exact; }
+        body { 
+            -webkit-print-color-adjust: exact; 
+            color-adjust: exact; 
+            margin: 0;
+            padding: 0;
+            background: white;
+        }
         .page-break { page-break-before: always; }
-        .receipt-container { width: 148mm; height: 210mm; margin: auto; }
+        .receipt-container { 
+            width: 210mm; 
+            height: 297mm; 
+            margin: 0 auto; 
+            padding: 5mm;
+            box-sizing: border-box;
+        }
+        .realistic-receipt {
+            width: 65mm !important;
+            max-width: none !important;
+            margin: 2mm !important;
+            padding: 3mm !important;
+            border: 1px solid #ccc !important;
+            box-shadow: none !important;
+            display: inline-block !important;
+            vertical-align: top !important;
+            page-break-inside: avoid !important;
+        }
+        .receipt-row {
+            display: flex !important;
+            justify-content: space-between !important;
+            margin-bottom: 2mm !important;
+        }
+        .receipt-row:last-child {
+            margin-bottom: 0 !important;
+        }
+        .receipt-page {
+            display: flex !important;
+            flex-direction: column !important;
+            justify-content: space-between !important;
+            min-height: 297mm !important;
+        }
+        .receipt-wrapper {
+            width: 100% !important;
+            height: 99mm !important;
+            margin-bottom: 0 !important;
+            display: flex !important;
+            justify-content: center !important;
+        }
+        .receipt-wrapper:nth-child(1) {
+            align-self: flex-start !important;
+        }
+        .receipt-wrapper:nth-child(2) {
+            align-self: center !important;
+        }
+        .receipt-wrapper:nth-child(3) {
+            align-self: flex-end !important;
+        }
+        .compact-receipt {
+            font-size: 8px !important;
+            line-height: 1.2 !important;
+            width: 100% !important;
+            max-width: 100% !important;
+        }
+        .compact-receipt .receipt-row {
+            display: flex !important;
+            justify-content: space-between !important;
+            margin-bottom: 1mm !important;
+        }
+        .no-print { display: none !important; }
     }
-    @page { size: A5; margin: 0; }
-    body { margin: 0; background-color: #f0f2f5; }
+    @page { 
+        size: A4; 
+        margin: 0; 
+    }
+    body { 
+        margin: 0; 
+        background-color: #f0f2f5; 
+    }
     .receipt-container {
-         width: 148mm;
-         height: 210mm;
+         width: 210mm;
+         height: 297mm;
          margin: 20px auto;
          background-color: white;
          box-shadow: 0 0 10px rgba(0,0,0,0.1);
@@ -41,25 +116,31 @@ const CHECK_NOTICE_PRINT_STYLE = `
 
 const AbonentFormModal: React.FC<{ abonent: Abonent | null; onSave: () => void; onClose: () => void; controllers: User[] }> = ({ abonent, onSave, onClose, controllers }) => {
     const [formData, setFormData] = useState({
-        fullName: abonent?.fullName || '',
-        address: abonent?.address || '',
-        phone: abonent?.phone || '',
-        numberOfPeople: abonent?.numberOfPeople || 1,
-        buildingType: abonent?.buildingType || BuildingType.Apartment,
-        waterTariff: abonent?.waterTariff || WaterTariffType.ByPerson,
-        status: abonent?.status || AbonentStatus.Active,
-        balance: abonent?.balance || 0,
-        zoneId: abonent?.zoneId || '',
-        hasGarden: abonent?.hasGarden || false,
-        gardenSize: abonent?.gardenSize || 0.2,
-        controllerId: abonent?.controllerId || '',
-        personalAccount: abonent?.personalAccount || '',
+        fullName: abonent?.fullName ?? '',
+        address: abonent?.address ?? '',
+        phone: abonent?.phone ?? '',
+        numberOfPeople: abonent?.numberOfPeople ?? 1,
+        buildingType: abonent?.buildingType ?? BuildingType.Apartment,
+        waterTariff: abonent?.waterTariff ?? WaterTariffType.ByPerson,
+        status: abonent?.status ?? AbonentStatus.Active,
+        hasGarden: abonent?.hasGarden ?? false,
         hasWaterService: abonent?.hasWaterService ?? true,
         hasGarbageService: abonent?.hasGarbageService ?? true,
+        balance: abonent?.balance ?? 0,
+        personalAccount: abonent?.personalAccount ?? '',
+        controllerId: abonent?.controllerId ?? '',
+        debtComment: abonent?.debtComment ?? '',
         lastMeterReading: abonent?.lastMeterReading ?? undefined,
         currentMeterReading: abonent?.currentMeterReading ?? undefined,
-        meterReadingMonth: abonent?.meterReadingMonth || '',
-        isImportedDebt: abonent?.isImportedDebt || false,
+        meterReadingMonth: abonent?.meterReadingMonth ?? '',
+        // Двойные счетчики
+        hasDualMeters: abonent?.hasDualMeters ?? false,
+        lastMeterReading2: abonent?.lastMeterReading2 ?? undefined,
+        currentMeterReading2: abonent?.currentMeterReading2 ?? undefined,
+        meterType1: abonent?.meterType1 ?? 'cold_water',
+        meterType2: abonent?.meterType2 ?? 'cold_water_2',
+        gardenSize: abonent?.gardenSize ?? 0.2,
+        isImportedDebt: abonent?.isImportedDebt ?? false
     });
     const [isSaving, setIsSaving] = useState(false);
     const [isConfirmingReset, setIsConfirmingReset] = useState(false);
@@ -73,12 +154,11 @@ const AbonentFormModal: React.FC<{ abonent: Abonent | null; onSave: () => void; 
         setIsConfirmingReset(true);
         try {
             const pass = await api.resetAbonentPassword(abonent.id);
-            setNewPassword(pass);
+            setNewPassword(pass ? 'Новый пароль: ' + Math.random().toString(36).substr(2, 8) : null);
         } catch (error) {
             alert("Ошибка при сбросе пароля.");
         } finally {
             setIsConfirmingReset(false);
-            setIsConfirmingReset(false); // Close confirmation
         }
     }
 
@@ -90,11 +170,14 @@ const AbonentFormModal: React.FC<{ abonent: Abonent | null; onSave: () => void; 
                 ...formData,
                 lastMeterReading: formData.lastMeterReading === undefined ? undefined : Number(formData.lastMeterReading),
                 currentMeterReading: formData.currentMeterReading === undefined ? undefined : Number(formData.currentMeterReading),
+                lastMeterReading2: formData.lastMeterReading2 === undefined ? undefined : Number(formData.lastMeterReading2),
+                currentMeterReading2: formData.currentMeterReading2 === undefined ? undefined : Number(formData.currentMeterReading2),
+                createdAt: abonent?.createdAt || new Date().toISOString()
             };
             if (abonent) {
-                await api.updateAbonent({ ...abonent, ...dataToSave });
+                await api.updateAbonent(abonent.id, dataToSave);
             } else {
-                const newAbonent = await api.addAbonent({ ...dataToSave, createdAt: new Date().toISOString() });
+                const newAbonentId = await api.createAbonent(dataToSave);
                 if (
                     dataToSave.waterTariff === WaterTariffType.ByMeter &&
                     dataToSave.lastMeterReading !== undefined &&
@@ -104,11 +187,11 @@ const AbonentFormModal: React.FC<{ abonent: Abonent | null; onSave: () => void; 
                         ? new Date(formData.meterReadingMonth + '-01')
                         : new Date();
                     prevMonth.setMonth(prevMonth.getMonth() - 1);
-                    await api.addMeterReading({ abonentId: newAbonent.id, value: Number(dataToSave.lastMeterReading), date: prevMonth.toISOString().slice(0, 10) });
+                    await api.addMeterReading(newAbonentId, Number(dataToSave.lastMeterReading));
                     const currDate = formData.meterReadingMonth
                         ? new Date(formData.meterReadingMonth + '-28')
                         : new Date();
-                    await api.addMeterReading({ abonentId: newAbonent.id, value: Number(dataToSave.currentMeterReading), date: currDate.toISOString().slice(0, 10) });
+                    await api.addMeterReading(newAbonentId, Number(dataToSave.currentMeterReading));
                 }
             }
             onSave();
@@ -121,11 +204,7 @@ const AbonentFormModal: React.FC<{ abonent: Abonent | null; onSave: () => void; 
         if (!abonent || !newMeterValue || !newMeterDate) return;
         setIsAddingMeter(true);
         try {
-            await api.addMeterReading({
-                abonentId: abonent.id,
-                value: Number(newMeterValue),
-                date: new Date(newMeterDate + '-28').toISOString().slice(0, 10),
-            });
+            await api.addMeterReading(abonent.id, Number(newMeterValue));
             setNewMeterValue('');
             setNewMeterDate('');
             alert('Показание успешно добавлено!');
@@ -140,7 +219,7 @@ const AbonentFormModal: React.FC<{ abonent: Abonent | null; onSave: () => void; 
         if (!abonent) return;
         setIsSaving(true);
         try {
-            await api.updateAbonent({ ...abonent, ...formData, isImportedDebt: true });
+            await api.updateAbonent(abonent.id, { isImportedDebt: true });
             setFormData({ ...formData, isImportedDebt: true });
             onSave();
         } finally {
@@ -191,35 +270,115 @@ const AbonentFormModal: React.FC<{ abonent: Abonent | null; onSave: () => void; 
                                 <option value={WaterTariffType.ByMeter}>По счетчику</option>
                             </select>
                             {formData.waterTariff === WaterTariffType.ByMeter && (
-                                <div className="col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4 bg-blue-50 rounded-lg p-4 border border-blue-200 mt-2">
-                                    <div className="flex flex-col">
-                                        <label className="text-sm font-medium mb-1" htmlFor="last-meter-reading">Предыдущее показание</label>
+                                <div className="col-span-2 space-y-4 bg-blue-50 rounded-lg p-4 border border-blue-200 mt-2">
+                                    {/* Двойные счетчики */}
+                                    <div className="flex items-center gap-2">
                                         <input
-                                            id="last-meter-reading"
-                                            type="number"
-                                            inputMode="numeric"
-                                            pattern="[0-9]*"
-                                            maxLength={10}
-                                            placeholder="0000000000"
-                                            value={formData.lastMeterReading ?? ''}
-                                            onChange={e => setFormData({...formData, lastMeterReading: e.target.value === '' ? undefined : Number(e.target.value)})}
-                                            className="block w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                                            type="checkbox"
+                                            id="has-dual-meters"
+                                            checked={formData.hasDualMeters || false}
+                                            onChange={e => setFormData({...formData, hasDualMeters: e.target.checked})}
+                                            className="rounded"
                                         />
+                                        <label htmlFor="has-dual-meters" className="text-sm font-medium">
+                                            Два счетчика (холодная вода)
+                                        </label>
                                     </div>
-                                    <div className="flex flex-col">
-                                        <label className="text-sm font-medium mb-1" htmlFor="current-meter-reading">Текущее показание</label>
-                                        <input
-                                            id="current-meter-reading"
-                                            type="number"
-                                            inputMode="numeric"
-                                            pattern="[0-9]*"
-                                            maxLength={10}
-                                            placeholder="0000000000"
-                                            value={formData.currentMeterReading ?? ''}
-                                            onChange={e => setFormData({...formData, currentMeterReading: e.target.value === '' ? undefined : Number(e.target.value)})}
-                                            className="block w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                                        />
+
+                                    {/* Первый счетчик */}
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div className="flex flex-col">
+                                            <label className="text-sm font-medium mb-1" htmlFor="meter-type-1">
+                                                {formData.hasDualMeters ? 'Тип 1-го счетчика' : 'Тип счетчика'}
+                                            </label>
+                                            <select
+                                                id="meter-type-1"
+                                                value={formData.meterType1 || 'cold_water'}
+                                                onChange={e => setFormData({...formData, meterType1: e.target.value})}
+                                                className="block w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                                            >
+                                                <option value="cold_water">Холодная вода</option>
+                                                <option value="hot_water">Горячая вода</option>
+                                                <option value="general">Общий</option>
+                                            </select>
+                                        </div>
+                                        <div className="flex flex-col">
+                                            <label className="text-sm font-medium mb-1" htmlFor="last-meter-reading">Предыдущее показание</label>
+                                            <input
+                                                id="last-meter-reading"
+                                                type="number"
+                                                inputMode="numeric"
+                                                pattern="[0-9]*"
+                                                maxLength={10}
+                                                placeholder="0000000000"
+                                                value={formData.lastMeterReading ?? ''}
+                                                onChange={e => setFormData({...formData, lastMeterReading: e.target.value === '' ? undefined : Number(e.target.value)})}
+                                                className="block w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                                            />
+                                        </div>
+                                        <div className="flex flex-col">
+                                            <label className="text-sm font-medium mb-1" htmlFor="current-meter-reading">Текущее показание</label>
+                                            <input
+                                                id="current-meter-reading"
+                                                type="number"
+                                                inputMode="numeric"
+                                                pattern="[0-9]*"
+                                                maxLength={10}
+                                                placeholder="0000000000"
+                                                value={formData.currentMeterReading ?? ''}
+                                                onChange={e => setFormData({...formData, currentMeterReading: e.target.value === '' ? undefined : Number(e.target.value)})}
+                                                className="block w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                                            />
+                                        </div>
                                     </div>
+
+                                    {/* Второй счетчик (если включен) */}
+                                    {formData.hasDualMeters && (
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 border-t pt-4">
+                                            <div className="flex flex-col">
+                                                <label className="text-sm font-medium mb-1" htmlFor="meter-type-2">Тип 2-го счетчика</label>
+                                                <select
+                                                    id="meter-type-2"
+                                                    value={formData.meterType2 || 'hot_water'}
+                                                    onChange={e => setFormData({...formData, meterType2: e.target.value})}
+                                                    className="block w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                                                >
+                                                                                                <option value="cold_water">Холодная вода</option>
+                                            <option value="cold_water_2">Холодная вода (2-й счетчик)</option>
+                                            <option value="general">Общий</option>
+                                                </select>
+                                            </div>
+                                            <div className="flex flex-col">
+                                                <label className="text-sm font-medium mb-1" htmlFor="last-meter-reading-2">Предыдущее показание (2-й счетчик)</label>
+                                                <input
+                                                    id="last-meter-reading-2"
+                                                    type="number"
+                                                    inputMode="numeric"
+                                                    pattern="[0-9]*"
+                                                    maxLength={10}
+                                                    placeholder="0000000000"
+                                                    value={formData.lastMeterReading2 ?? ''}
+                                                    onChange={e => setFormData({...formData, lastMeterReading2: e.target.value === '' ? undefined : Number(e.target.value)})}
+                                                    className="block w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                                                />
+                                            </div>
+                                            <div className="flex flex-col">
+                                                <label className="text-sm font-medium mb-1" htmlFor="current-meter-reading-2">Текущее показание (2-й счетчик)</label>
+                                                <input
+                                                    id="current-meter-reading-2"
+                                                    type="number"
+                                                    inputMode="numeric"
+                                                    pattern="[0-9]*"
+                                                    maxLength={10}
+                                                    placeholder="0000000000"
+                                                    value={formData.currentMeterReading2 ?? ''}
+                                                    onChange={e => setFormData({...formData, currentMeterReading2: e.target.value === '' ? undefined : Number(e.target.value)})}
+                                                    className="block w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                                                />
+                                            </div>
+                                        </div>
+                                    )}
+
                                     <div className="flex flex-col md:col-span-2">
                                         <label className="text-sm font-medium mb-1" htmlFor="meter-reading-month">Месяц показаний</label>
                                         <input
@@ -243,6 +402,37 @@ const AbonentFormModal: React.FC<{ abonent: Abonent | null; onSave: () => void; 
                         <option value={AbonentStatus.Disconnected}>Отключен</option>
                         <option value={AbonentStatus.Archived}>Архивный</option>
                     </select>
+                    
+                    {/* Поле для редактирования долга */}
+                    <div className="col-span-2">
+                        <label className="block text-sm font-medium text-slate-700 mb-1">Текущий долг (сом)</label>
+                        <input 
+                            type="number" 
+                            step="0.01"
+                            placeholder="0.00" 
+                            value={formData.balance} 
+                            onChange={e => setFormData({...formData, balance: Number(e.target.value)})} 
+                            className="block w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 sm:text-sm" 
+                        />
+                        <p className="text-xs text-slate-500 mt-1">
+                            Внимание: изменение долга может повлиять на финансовую отчетность
+                        </p>
+                    </div>
+                    
+                    {/* Поле для комментария к долгу */}
+                    <div className="col-span-2">
+                        <label className="block text-sm font-medium text-slate-700 mb-1">Комментарий к долгу</label>
+                        <textarea 
+                            placeholder="Укажите причину изменения долга или обстоятельства..." 
+                            value={formData.debtComment} 
+                            onChange={e => setFormData({...formData, debtComment: e.target.value})} 
+                            rows={3}
+                            className="block w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 sm:text-sm resize-none" 
+                        />
+                        <p className="text-xs text-slate-500 mt-1">
+                            Обязательно укажите причину изменения долга для аудита
+                        </p>
+                    </div>
                     <div>
                         <label className="block text-sm font-medium">Контролер</label>
                         <select value={formData.controllerId} onChange={e => setFormData({...formData, controllerId: e.target.value})} className="block w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
@@ -363,7 +553,7 @@ const AbonentHistoryModal: React.FC<{ abonent: Abonent; onClose: () => void; }> 
         if (paymentAmount <= 0) return;
         setIsSavingPayment(true);
         try {
-            await api.recordPaymentByController(abonent.id, paymentAmount, PaymentMethod.Cash);
+            await api.recordPaymentByController(abonent.id, paymentAmount);
             setPaymentAmount(0);
             const data = await api.getAbonentHistory(abonent.id);
             const latestAbonentData = await api.getAbonents().then(all => all.find(a => a.id === abonent.id));
@@ -384,7 +574,12 @@ const AbonentHistoryModal: React.FC<{ abonent: Abonent; onClose: () => void; }> 
             const details = await api.getReceiptDetails(abonent.id);
             setReceiptDetails(details);
             setIsPrinting(true);
-            await api.logReceiptPrint([abonent.id]);
+            await api.logReceiptPrint(abonent.id);
+            
+            // Автоматически открываем диалог печати
+            setTimeout(() => {
+                window.print();
+            }, 500);
         } catch (error) {
             console.error("Failed to generate receipt", error);
             alert("Ошибка при создании квитанции.");
@@ -532,6 +727,7 @@ const AbonentsTab: React.FC = () => {
         comment: '',
     });
     const [isClosing, setIsClosing] = useState(false);
+    const [isReceiptModalOpen, setIsReceiptModalOpen] = useState(false);
     const { user } = useContext(AuthContext)!;
 
     const showNotification = (message: string) => {
@@ -579,31 +775,60 @@ const AbonentsTab: React.FC = () => {
         }
     };
 
-    const handlePrintSelectedReceipts = async () => {
+    const handleOpenReceiptModal = () => {
         if (selectedAbonents.size === 0) {
             showNotification("Выберите абонентов для печати квитанций.");
             return;
         }
+        setIsReceiptModalOpen(true);
+    };
 
-        const abonentIds = Array.from(selectedAbonents);
-        const allDetails = await api.getBulkReceiptDetails(abonentIds);
-        
-        const contentToPrint = allDetails.map((details, index) => (
-            <React.Fragment key={details.abonent.id}>
-                {(() => {
-                    const key = (details.companySettings.receiptTemplate || 'classic') as ReceiptTemplateKey;
+    const handlePrintSelectedReceipts = async () => {
+        try {
+            const abonentIds = Array.from(selectedAbonents);
+            const allDetails = await api.getBulkReceiptDetails(abonentIds);
+            
+            // Группируем квитанции по 3 на страницу
+            const receiptsPerPage = 3;
+            const pages = [];
+            
+            for (let i = 0; i < allDetails.length; i += receiptsPerPage) {
+                const pageReceipts = allDetails.slice(i, i + receiptsPerPage);
+                const pageContent = pageReceipts.map((details, index) => {
+                    const key = (details.companySettings?.receiptTemplate || 'compact') as ReceiptTemplateKey;
                     const Template = receiptTemplates[key];
-                    return <Template details={details} />;
-                })()}
-                {index < allDetails.length - 1 && <div className="page-break"></div>}
-            </React.Fragment>
-        ));
+                    return (
+                        <div key={details.abonent.id} className="receipt-wrapper">
+                            <Template details={details} />
+                        </div>
+                    );
+                });
+                
+                pages.push(
+                    <div key={i} className="receipt-page">
+                        {pageContent}
+                        {i + receiptsPerPage < allDetails.length && <div className="page-break"></div>}
+                    </div>
+                );
+            }
+            
+            const contentToPrint = pages;
 
-        setPrintContent(<div>{contentToPrint}</div>);
-        setPrintStyle(RECEIPT_PRINT_STYLE);
-        setIsPrinting(true);
+            setPrintContent(<div>{contentToPrint}</div>);
+            setPrintStyle(RECEIPT_PRINT_STYLE);
+            setIsPrinting(true);
 
-        await api.logReceiptPrint(abonentIds);
+            await api.logReceiptPrint(abonentIds);
+            
+            // Автоматически открываем диалог печати
+            setTimeout(() => {
+                window.print();
+            }, 500);
+            
+        } catch (error) {
+            console.error("Ошибка при печати квитанций:", error);
+            showNotification("Ошибка при создании квитанций для печати.");
+        }
     };
 
     const handlePrintCheckNotice = async () => {
@@ -699,8 +924,8 @@ const AbonentsTab: React.FC = () => {
                 <h2 className="text-xl font-semibold">Управление абонентами</h2>
                 <div className="flex gap-2 flex-wrap">
                     <button onClick={() => { setEditingAbonent(null); setIsModalOpen(true); }} className="bg-blue-600 text-white font-semibold px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-2 disabled:bg-blue-300">Добавить абонента</button>
-                    <button onClick={handlePrintSelectedReceipts} className="bg-blue-600 text-white font-semibold px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-2 disabled:bg-blue-300"><PrinterIcon className="w-5 h-5"/>Квитанции</button>
-                    <button onClick={handlePrintCheckNotice} className="bg-blue-600 text-white font-semibold px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-2 disabled:bg-blue-300"><FileTextIcon className="w-5 h-5"/>Чек-извещение</button>
+                    <button onClick={handleOpenReceiptModal} className="bg-blue-600 text-white font-semibold px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-2 disabled:bg-blue-300"><PrinterIcon className="w-5 h-5"/>Квитанции</button>
+                    <button onClick={handlePrintCheckNotice} className="bg-blue-600 text-white font-semibold px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-2 disabled:bg-blue-300"><FileTextIcon className="w-5 h-5"/>Реестр</button>
                 </div>
             </div>
              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
@@ -758,6 +983,60 @@ const AbonentsTab: React.FC = () => {
              <Pagination currentPage={currentPage} totalItems={filteredAbonents.length} itemsPerPage={ITEMS_PER_PAGE} onPageChange={setCurrentPage} />
             {isModalOpen && <AbonentFormModal abonent={editingAbonent} onSave={handleSave} onClose={() => setIsModalOpen(false)} controllers={controllers} />}
             {historyAbonent && <AbonentHistoryModal abonent={historyAbonent} onClose={() => {setHistoryAbonent(null); fetchData();}} />}
+            {isReceiptModalOpen && (
+                <Modal isOpen={isReceiptModalOpen} onClose={() => setIsReceiptModalOpen(false)} title="Печать квитанций" size="lg">
+                    <div className="space-y-4">
+                        <div className="bg-blue-50 p-4 rounded-lg">
+                            <h4 className="font-semibold text-lg mb-2">Выбранные абоненты для печати квитанций:</h4>
+                            <div className="space-y-2">
+                                {Array.from(selectedAbonents).map(abonentId => {
+                                    const abonent = abonents.find(a => a.id === abonentId);
+                                    return abonent ? (
+                                        <div key={abonentId} className="flex justify-between items-center bg-white p-2 rounded border">
+                                            <div>
+                                                <span className="font-medium">{abonent.fullName}</span>
+                                                <span className="text-gray-500 ml-2">({abonent.address})</span>
+                                            </div>
+                                            <span className={`font-semibold ${abonent.balance < 0 ? 'text-red-600' : 'text-emerald-600'}`}>
+                                                {formatCurrency(abonent.balance)}
+                                            </span>
+                                        </div>
+                                    ) : null;
+                                })}
+                            </div>
+                        </div>
+                        
+                        <div className="bg-yellow-50 p-4 rounded-lg">
+                            <h4 className="font-semibold text-lg mb-2">Информация о печати:</h4>
+                            <ul className="space-y-1 text-sm">
+                                <li>• Квитанции будут сгруппированы по 3 на страницу</li>
+                                <li>• Автоматически откроется диалог печати</li>
+                                <li>• Рекомендуется сохранить как PDF</li>
+                                <li>• Всего абонентов: <strong>{selectedAbonents.size}</strong></li>
+                            </ul>
+                        </div>
+                        
+                        <div className="flex justify-end gap-2 mt-6">
+                            <button
+                                onClick={() => setIsReceiptModalOpen(false)}
+                                className="px-4 py-2 text-gray-600 border border-gray-300 rounded-md hover:bg-gray-50"
+                            >
+                                Отмена
+                            </button>
+                            <button
+                                onClick={() => {
+                                    setIsReceiptModalOpen(false);
+                                    handlePrintSelectedReceipts();
+                                }}
+                                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 flex items-center gap-2"
+                            >
+                                <PrinterIcon className="w-5 h-5" />
+                                Печатать квитанции
+                            </button>
+                        </div>
+                    </div>
+                </Modal>
+            )}
             {checkClosingAbonent && (
                 <Modal isOpen={!!checkClosingAbonent} onClose={() => setCheckClosingAbonent(null)} title={`Закрыть чек: ${checkClosingAbonent.fullName}`} size="md">
                     <form onSubmit={e => { e.preventDefault(); handleCheckClosing(); }} className="space-y-4">
@@ -783,6 +1062,7 @@ const AbonentsTab: React.FC = () => {
                                 <option value={PaymentMethod.Bank}>Банк</option>
                                 <option value={PaymentMethod.Card}>Карта</option>
                                 <option value={PaymentMethod.QR}>QR-код</option>
+                                <option value={PaymentMethod.CashRegister}>Касса</option>
                             </select>
                         </div>
                         <div>

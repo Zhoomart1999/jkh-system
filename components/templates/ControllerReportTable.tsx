@@ -1,6 +1,5 @@
 import React, { useRef } from 'react';
 import { Abonent } from '../../types';
-import * as xlsx from 'xlsx';
 import PrintProvider from '../ui/PrintProvider';
 
 interface ControllerReportTableProps {
@@ -19,20 +18,7 @@ const printStyle = `
 const ControllerReportTable: React.FC<ControllerReportTableProps> = ({ abonents }) => {
   const tableRef = useRef<HTMLTableElement>(null);
 
-  const handleExportExcel = () => {
-    const dataToExport = abonents.map((a, idx) => ({
-      '№': idx + 1,
-      'ФИО': a.fullName,
-      'Адрес': a.address,
-      'Лицевой счёт': a.personalAccount || '',
-      'Телефон': a.phone || '',
-      'Долг': a.balance.toFixed(2),
-    }));
-    const worksheet = xlsx.utils.json_to_sheet(dataToExport);
-    const workbook = xlsx.utils.book_new();
-    xlsx.utils.book_append_sheet(workbook, worksheet, 'Абоненты');
-    xlsx.writeFile(workbook, 'controller_report.xlsx');
-  };
+
 
   return (
     <div className="p-4 bg-white rounded-lg shadow max-w-5xl mx-auto">
@@ -40,7 +26,6 @@ const ControllerReportTable: React.FC<ControllerReportTableProps> = ({ abonents 
       <div className="flex justify-between items-center mb-4 no-print">
         <h2 className="text-xl font-bold">Ведомость по абонентам для контролёра</h2>
         <div className="flex gap-2">
-          <button onClick={handleExportExcel} className="bg-green-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-green-700">Экспорт в Excel</button>
           <PrintProvider printStyle={printStyle} title="Ведомость по абонентам" onAfterPrint={() => {}}>
             <button className="bg-blue-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-blue-700">Печать</button>
           </PrintProvider>

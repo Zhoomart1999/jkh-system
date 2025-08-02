@@ -11,6 +11,7 @@ export interface User {
     role: Role;
     pin: string;
     isActive: boolean;
+    controllerNumber?: string; // Номер контролёра (обязательно для контролёров)
 }
 
 export enum BuildingType {
@@ -52,11 +53,18 @@ export interface Abonent {
     lastMeterReading?: number;
     currentMeterReading?: number;
     meterReadingMonth?: string; // YYYY-MM
+    // Двойные счетчики
+    hasDualMeters?: boolean; // Есть ли два счетчика
+    lastMeterReading2?: number; // Показания второго счетчика
+    currentMeterReading2?: number; // Текущие показания второго счетчика
+    meterType1?: string; // Тип первого счетчика (холодная вода, горячая вода и т.д.)
+    meterType2?: string; // Тип второго счетчика
     isImportedDebt?: boolean;
     riskOfDisconnection?: boolean;
     billingBlocked?: boolean;
     debtPaymentPlanId?: string;
     lastAppealDate?: string;
+    debtComment?: string; // Комментарий к долгу (причина, обстоятельства)
 }
 
 export interface Tariffs {
@@ -98,6 +106,7 @@ export enum PaymentMethod {
     Bank = 'bank',
     Card = 'card',
     QR = 'qr',
+    CashRegister = 'cash_register', // Добавляем Касса
     System = 'system' // For payments made through the system by accountant
 }
 
@@ -380,12 +389,23 @@ export interface CheckNoticeAbonent {
   address: string;
   hasDebt: boolean;
   balance: number;
+  phone?: string;
+  numberOfPeople?: number;
+  buildingType?: string;
+  tariff?: string;
+  personalAccount?: string;
 }
 
 export interface CheckNoticeZoneGroup {
   zoneId: string;
   zoneName: string;
   abonents: CheckNoticeAbonent[];
+  statistics?: {
+    totalChecked: number;
+    withoutDebt: number;
+    withDebt: number;
+    totalDebt: number;
+  };
 }
 
 // --- Admin specific types ---
@@ -777,6 +797,39 @@ export enum NotificationType {
     ServiceRestoration = 'service_restoration',
     NewTariff = 'new_tariff',
     MaintenanceScheduled = 'maintenance_scheduled',
+}
+
+export interface NotificationTemplate {
+    id: string;
+    type: NotificationType;
+    title: string;
+    template: string;
+    variables: string[];
+    isActive: boolean;
+}
+
+export interface NotificationCampaign {
+    id: string;
+    name: string;
+    type: NotificationType;
+    targetCount: number;
+    sentCount: number;
+    status: 'draft' | 'sending' | 'completed' | 'failed';
+    createdAt: string;
+    completedAt?: string;
+}
+
+export interface DebtRestructuring {
+    id: string;
+    abonentId: string;
+    originalDebt: number;
+    restructuredAmount: number;
+    monthlyPayment: number;
+    totalPayments: number;
+    startDate: string;
+    endDate: string;
+    status: 'active' | 'completed' | 'defaulted';
+    payments: { date: string; amount: number; status: 'paid' | 'missed' }[];
 }
 
 export interface Notification {

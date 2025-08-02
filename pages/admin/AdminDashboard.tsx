@@ -4,7 +4,7 @@ import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recha
 import StatCard from '../../components/ui/StatCard';
 import Card from '../../components/ui/Card';
 import { UsersIcon, DollarSignIcon, HistoryIcon, PieChartIcon } from '../../components/ui/Icons';
-import { api } from '../../services/api';
+import { api } from "../../services/mock-api"
 import { AuditLog, AdminDashboardData, AbonentStatus } from '../../types';
 
 const PIE_COLORS = {
@@ -42,7 +42,7 @@ const AdminDashboard: React.FC = () => {
             
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 <StatCard icon={<UsersIcon />} title="Всего абонентов" value={data.totalAbonents} />
-                <StatCard icon={<DollarSignIcon />} title="Общая задолженность" value={`${data.totalDebt.toLocaleString('ru-RU')} сом`} />
+                <StatCard icon={<DollarSignIcon />} title="Общая задолженность" value={`${(data.totalDebt || 0).toLocaleString('ru-RU')} сом`} />
                 <StatCard icon={<UsersIcon />} title="Пользователей системы" value={data.totalUsers} />
             </div>
 

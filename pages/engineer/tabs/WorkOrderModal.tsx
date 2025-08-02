@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Modal from '../../../components/ui/Modal';
 import { TechnicalRequest, User, InventoryItem, RequestStatus, RequestStatusLabels, RequestTypeLabels, WorkOrderDetails, RequestPriority, RequestPriorityLabels } from '../../../types';
-import { api } from '../../../services/api';
+import { api } from "../../../services/mock-api"
 import { SaveIcon, CameraIcon, ToolIcon, PrinterIcon } from '../../../components/ui/Icons';
 import PrintProvider from '../../../components/ui/PrintProvider';
 import WorkOrderPrintTemplate from '../../../components/templates/WorkOrderPrintTemplate';

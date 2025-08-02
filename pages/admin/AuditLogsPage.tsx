@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { api } from '../../services/api';
+import { api } from "../../services/mock-api"
 import { AuditLog } from '../../types';
 import Card from '../../components/ui/Card';
 

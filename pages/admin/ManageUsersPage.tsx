@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { api } from '../../services/api';
+import { api } from "../../services/mock-api"
 import { User, Role } from '../../types';
 import Card from '../../components/ui/Card';
 import Modal from '../../components/ui/Modal';
@@ -21,6 +21,7 @@ const UserFormModal: React.FC<UserFormModalProps> = ({ user, onClose, onSave }) 
         role: user?.role || Role.Engineer,
         pin: '', // PIN is always empty on modal open for security
         isActive: user ? user.isActive : true,
+        controllerNumber: user?.controllerNumber || '',
     });
     const [isSaving, setIsSaving] = useState(false);
 
@@ -42,6 +43,7 @@ const UserFormModal: React.FC<UserFormModalProps> = ({ user, onClose, onSave }) 
                 name: formData.name,
                 role: formData.role,
                 isActive: formData.isActive,
+                controllerNumber: formData.controllerNumber,
             };
             if (formData.pin) { // Only include pin if it was changed
                 dataToSave.pin = formData.pin;
@@ -53,6 +55,7 @@ const UserFormModal: React.FC<UserFormModalProps> = ({ user, onClose, onSave }) 
                 role: formData.role,
                 pin: formData.pin,
                 isActive: formData.isActive,
+                controllerNumber: formData.controllerNumber,
             };
             await onSave(dataToSave);
         }
@@ -94,6 +97,21 @@ const UserFormModal: React.FC<UserFormModalProps> = ({ user, onClose, onSave }) 
                        <option value="false">Неактивен</option>
                     </select>
                 </div>
+                {formData.role === Role.Controller && (
+                    <div>
+                        <label htmlFor="controllerNumber" className="block text-sm font-medium text-slate-700">Номер контролёра *</label>
+                        <input 
+                            type="text" 
+                            name="controllerNumber" 
+                            id="controllerNumber" 
+                            value={formData.controllerNumber} 
+                            onChange={handleChange} 
+                            required={formData.role === Role.Controller}
+                            placeholder="Введите номер контролёра"
+                            className="mt-1 block w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" 
+                        />
+                    </div>
+                )}
                 <div className="flex justify-end gap-3 pt-4">
                     <button type="button" onClick={onClose} className="px-4 py-2 bg-slate-200 text-slate-800 rounded-lg hover:bg-slate-300 transition-colors">Отмена</button>
                     <button type="submit" disabled={isSaving} className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2 disabled:bg-blue-300">

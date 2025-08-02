@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Card from '../../../components/ui/Card';
-import { api } from '../../../services/api';
+import { api } from "../../../services/mock-api"
 import { DebtCase, DebtStatus, DebtStatusLabels } from '../../../types';
 import { GavelIcon, SaveIcon } from '../../../components/ui/Icons';
 import Modal from '../../../components/ui/Modal';

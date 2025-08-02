@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import Card from '../../../components/ui/Card';
 import Modal, { ConfirmationModal } from '../../../components/ui/Modal';
-import { api } from '../../../services/api';
+import { api } from "../../../services/mock-api"
 import { FinancialPlan, ExpenseCategory, ExpenseCategoryLabels } from '../../../types';
 import { SaveIcon, EditIcon, TrashIcon } from '../../../components/ui/Icons';
 

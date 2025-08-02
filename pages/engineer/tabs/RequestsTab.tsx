@@ -1,13 +1,12 @@
 
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import Card from '../../../components/ui/Card';
-import { api } from '../../../services/api';
+import { api } from "../../../services/mock-api"
 import { TechnicalRequest, RequestStatus, RequestStatusLabels, RequestType, RequestTypeLabels, User, Role, RequestPriority, RequestPriorityLabels, Abonent } from '../../../types';
 import Pagination from '../../../components/ui/Pagination';
 import WorkOrderModal from './WorkOrderModal';
 import Modal from '../../../components/ui/Modal';
-import { SaveIcon, UploadIcon } from '../../../components/ui/Icons';
-import * as xlsx from 'xlsx';
+import { SaveIcon } from '../../../components/ui/Icons';
 
 const ITEMS_PER_PAGE = 10;
 const formatDate = (dateString: string) => new Date(dateString).toLocaleString('ru-RU');
@@ -64,58 +63,6 @@ const CreateRequestModal: React.FC<{onClose: () => void}> = ({ onClose }) => {
     )
 }
 
-const ImportRequestsModal: React.FC<{onClose: () => void}> = ({ onClose }) => {
-    const [loading, setLoading] = useState(false);
-    const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
-    const fileInputRef = useRef<HTMLInputElement>(null);
-
-    const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-        const file = event.target.files?.[0];
-        if (file) processFile(file);
-    };
-
-    const processFile = (file: File) => {
-        setLoading(true);
-        setMessage(null);
-        const reader = new FileReader();
-        reader.onload = async (e) => {
-            try {
-                const data = new Uint8Array(e.target?.result as ArrayBuffer);
-                const workbook = xlsx.read(data, { type: 'array' });
-                const sheetName = workbook.SheetNames[0];
-                const worksheet = workbook.Sheets[sheetName];
-                const json = xlsx.utils.sheet_to_json(worksheet) as any[];
-
-                const requestsToImport: Omit<TechnicalRequest, 'id'|'createdAt'|'abonentName'|'abonentAddress'|'status'|'priority'|'workOrder'>[] = [];
-                for (const row of json) {
-                    if (!row.abonentId || !row.type || !row.details) {
-                        throw new Error("Файл должен содержать столбцы: abonentId, type, details");
-                    }
-                    requestsToImport.push({ abonentId: String(row.abonentId), type: row.type as RequestType, details: String(row.details) });
-                }
-                await api.bulkAddRequests(requestsToImport);
-                setMessage({ type: 'success', text: `Успешно импортировано ${requestsToImport.length} заявок.` });
-            } catch (error: any) {
-                setMessage({ type: 'error', text: error.message || 'Ошибка обработки файла.' });
-            } finally {
-                setLoading(false);
-            }
-        };
-        reader.readAsArrayBuffer(file);
-    };
-
-    return (
-        <Modal title="Импорт заявок из Excel" isOpen={true} onClose={onClose}>
-            <p className="text-sm text-slate-500 mb-4">Файл .xlsx должен содержать столбцы: `abonentId`, `type`, `details`.</p>
-            <input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" accept=".xlsx"/>
-            <button onClick={() => fileInputRef.current?.click()} disabled={loading} className="w-full flex justify-center items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-blue-700 transition-colors disabled:bg-blue-400">
-                <UploadIcon className="w-5 h-5" /> {loading ? 'Обработка...' : 'Выбрать файл'}
-            </button>
-            {message && <div className={`mt-4 p-3 rounded-md text-sm ${message.type === 'success' ? 'bg-emerald-100 text-emerald-800' : 'bg-red-100 text-red-800'}`}>{message.text}</div>}
-        </Modal>
-    )
-}
-
 const RequestsTab: React.FC = () => {
     const [requests, setRequests] = useState<TechnicalRequest[]>([]);
     const [users, setUsers] = useState<User[]>([]);
@@ -123,7 +70,6 @@ const RequestsTab: React.FC = () => {
     const [currentPage, setCurrentPage] = useState(1);
     const [selectedRequest, setSelectedRequest] = useState<TechnicalRequest | null>(null);
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-    const [isImportModalOpen, setIsImportModalOpen] = useState(false);
     const [filters, setFilters] = useState({
         term: '',
         status: 'all',
@@ -187,15 +133,11 @@ const RequestsTab: React.FC = () => {
         return <span className={`${baseClasses} ${colorClasses}`}>{RequestStatusLabels[status]}</span>;
     };
 
-
     return (
         <Card>
             <div className="flex justify-between items-start mb-4 gap-2 flex-wrap">
                 <h2 className="text-xl font-semibold">Технические заявки / Рабочие наряды</h2>
                 <div className="flex gap-2 flex-wrap">
-                    <button onClick={() => setIsImportModalOpen(true)} className="bg-slate-600 text-white font-semibold px-4 py-2 rounded-lg hover:bg-slate-700 transition-colors flex items-center gap-2">
-                        <UploadIcon className="w-5 h-5"/> Импорт
-                    </button>
                     <button onClick={() => setIsCreateModalOpen(true)} className="bg-blue-600 text-white font-semibold px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
                         Создать заявку
                     </button>
@@ -256,7 +198,6 @@ const RequestsTab: React.FC = () => {
             )}
             {selectedRequest && <WorkOrderModal request={selectedRequest} users={users} onClose={handleModalClose}/>}
             {isCreateModalOpen && <CreateRequestModal onClose={handleCreateModalClose} />}
-            {isImportModalOpen && <ImportRequestsModal onClose={() => {setIsImportModalOpen(false); fetchData();}} />}
         </Card>
     );
 };

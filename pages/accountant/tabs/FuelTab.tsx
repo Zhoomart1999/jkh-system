@@ -3,7 +3,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import Card from '../../../components/ui/Card';
 import Modal from '../../../components/ui/Modal';
 import Pagination from '../../../components/ui/Pagination';
-import { api } from '../../../services/api';
+import { api } from "../../../services/mock-api"
 import { FuelLog } from '../../../types';
 import { EditIcon, TrashIcon, SaveIcon } from '../../../components/ui/Icons';
 

@@ -4,32 +4,40 @@ import path from 'path';
 
 export default defineConfig(({ mode }) => {
   return {
-    plugins: [
-      react()
-    ],
+    plugins: [react()],
     resolve: {
       alias: {
         '@': path.resolve(__dirname, './src'),
       },
     },
     server: {
-      port: 5173, // Должен совпадать с портом в electron/main.cjs
+      port: 3000,
       host: true,
     },
     build: {
       outDir: 'dist',
       sourcemap: mode === 'development',
+      minify: 'esbuild',
       rollupOptions: {
         output: {
           manualChunks: {
-            vendor: ['react', 'react-dom'],
-            router: ['react-router-dom'],
+            'react-vendor': ['react', 'react-dom'],
+            'router': ['react-router-dom'],
+            'firebase': ['firebase/app', 'firebase/firestore', 'firebase/auth'],
           },
         },
       },
+      chunkSizeWarningLimit: 1000,
     },
     optimizeDeps: {
-      include: ['react', 'react-dom', 'react-router-dom'],
+      include: [
+        'react', 
+        'react-dom', 
+        'react-router-dom',
+        'firebase/app',
+        'firebase/firestore',
+        'firebase/auth'
+      ],
     },
   };
 });

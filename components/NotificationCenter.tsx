@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { api } from '../services/api';
+import { api } from "../services/mock-api"
 import { SystemNotification, SystemNotificationType } from '../types';
 import { BellIcon, UsersIcon, WrenchIcon, ToolIcon, DollarSignIcon } from './ui/Icons';
 
@@ -46,7 +46,7 @@ const NotificationCenter: React.FC = () => {
     const handleToggle = async () => {
         setIsOpen(prev => !prev);
         if (!isOpen && unreadCount > 0) {
-            await api.markNotificationsAsRead();
+            await api.markNotificationAsRead('all');
             setUnreadCount(0); // Optimistic update
         }
     };

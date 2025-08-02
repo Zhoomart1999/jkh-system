@@ -1,8 +1,7 @@
 import React, { useState, useEffect, useMemo, useContext } from 'react';
-import * as xlsx from 'xlsx';
-import jsPDF from 'jspdf';
-import 'jspdf-autotable';
-import { api } from '../../../services/api';
+
+
+import { api } from "../../../services/mock-api"
 import { Payment, Abonent, AbonentStatus, BuildingType, PaymentMethod, ReceiptDetails } from '../../../types';
 import Card from '../../../components/ui/Card';
 import Modal, { ConfirmationModal } from '../../../components/ui/Modal';
@@ -31,11 +30,15 @@ const RECEIPT_PRINT_STYLE = `
 const formatDate = (dateString: string | null | undefined) => dateString ? new Date(dateString).toLocaleDateString('ru-RU') : 'N/A';
 const formatCurrency = (amount: number) => `${amount.toLocaleString('ru-RU', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} сом`;
 const formatPaymentMethod = (method?: PaymentMethod) => {
+    if (!method) return 'Не указан';
     switch (method) {
         case PaymentMethod.Cash: return 'Наличные';
-        case PaymentMethod.Card: return 'Карта/Перевод';
+        case PaymentMethod.Bank: return 'Банк';
+        case PaymentMethod.Card: return 'Карта';
+        case PaymentMethod.QR: return 'QR-код';
+        case PaymentMethod.CashRegister: return 'Касса';
         case PaymentMethod.System: return 'Система';
-        default: return 'Не указан';
+        default: return 'Неизвестно';
     }
 };
 
@@ -143,37 +146,7 @@ const RevenueTab: React.FC = () => {
         }
     };
 
-    const handleExport = async (format: 'excel' | 'pdf') => {
-        const dataToExport = filteredPayments.map(p => ({
-            'Дата': formatDate(p.date),
-            'Абонент': p.abonentName,
-            'Сумма': p.amount,
-            'Метод': formatPaymentMethod(p.paymentMethod),
-            'Принял': p.collectorId ? p.recordedByName : 'Бухгалтерия',
-            'Статус': p.status,
-        }));
 
-        if (format === 'excel') {
-            const worksheet = xlsx.utils.json_to_sheet(dataToExport);
-            const workbook = xlsx.utils.book_new();
-            xlsx.utils.book_append_sheet(workbook, worksheet, 'Payments');
-            xlsx.writeFile(workbook, 'payments_export.xlsx');
-        } else {
-            const doc = new jsPDF();
-            const response = await fetch('/fonts/Roboto-VariableFont_wdth,wght.ttf');
-            const buffer = await response.arrayBuffer();
-            const font = btoa(String.fromCharCode(...new Uint8Array(buffer)));
-            doc.addFileToVFS('Roboto-VariableFont_wdth,wght.ttf', font);
-            doc.addFont('Roboto-VariableFont_wdth,wght.ttf', 'Roboto', 'normal');
-            doc.setFont('Roboto');
-            (doc as any).autoTable({
-                head: [['Дата', 'Абонент', 'Сумма', 'Метод', 'Принял', 'Статус']],
-                body: dataToExport.map(Object.values),
-                styles: { font: 'Roboto' }
-            });
-            doc.save('payments_export.pdf');
-        }
-    };
 
     const filteredPayments = useMemo(() => {
         const abonentMap = new Map(abonents.map(a => [a.id, a]));
@@ -218,8 +191,6 @@ const RevenueTab: React.FC = () => {
                     <p className="text-sm text-slate-500">Просмотр, добавление и экспорт платежей от абонентов.</p>
                 </div>
                 <div className="flex gap-2">
-                    <button onClick={() => handleExport('excel')} className="bg-slate-200 text-slate-800 font-semibold px-4 py-2 rounded-lg hover:bg-slate-300 transition-colors flex items-center justify-center gap-2">Excel</button>
-                    <button onClick={() => handleExport('pdf')} className="bg-slate-200 text-slate-800 font-semibold px-4 py-2 rounded-lg hover:bg-slate-300 transition-colors flex items-center justify-center gap-2">PDF</button>
                     <button onClick={() => { setEditingPayment(null); setIsModalOpen(true); }} className="bg-blue-600 text-white font-semibold px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-2 disabled:bg-blue-300">Внести платеж</button>
                 </div>
             </div>

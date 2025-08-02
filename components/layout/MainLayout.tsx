@@ -18,9 +18,7 @@ import {
     ActivityIcon,
     ToolIcon,
     FileSpreadsheetIcon,
-    LayersIcon,
     CalendarCheckIcon,
-    FlaskConicalIcon,
     ReceiptIcon,
     DollarSignIcon,
     TrendingUpIcon,
@@ -31,7 +29,10 @@ import {
     ChatBubbleLeftRightIcon,
     ChartBarIcon,
     ClockIcon,
-    ExclamationTriangleIcon
+    ExclamationTriangleIcon,
+    UploadIcon,
+    CalendarIcon,
+    BellIcon
 } from '../ui/Icons';
 import AnnouncementBanner from './AnnouncementBanner';
 import NotificationCenter from '../NotificationCenter';
@@ -64,6 +65,10 @@ const navItems: NavItem[] = [
     { path: '/engineer/infrastructure', label: 'Зоны', icon: <MapPinIcon className="w-5 h-5" />, roles: [Role.Engineer, Role.Controller] },
     { path: '/engineer/reports', label: 'Отчеты', icon: <FileSpreadsheetIcon className="w-5 h-5" />, roles: [Role.Engineer, Role.Controller] },
     { path: '/engineer/check-closing', label: 'Закрытие чека', icon: <ReceiptIcon className="w-5 h-5" />, roles: [Role.Engineer, Role.Controller] },
+    { path: '/engineer/bulk-readings', label: 'Массовый импорт', icon: <UploadIcon className="w-5 h-5" />, roles: [Role.Engineer] },
+    { path: '/engineer/work-scheduler', label: 'Планировщик работ', icon: <CalendarIcon className="w-5 h-5" />, roles: [Role.Engineer] },
+    { path: '/engineer/auto-warehouse', label: 'Авто-склад', icon: <ExclamationTriangleIcon className="w-5 h-5" />, roles: [Role.Engineer] },
+    { path: '/engineer/water-quality', label: 'Качество воды', icon: <ChartBarIcon className="w-5 h-5" />, roles: [Role.Engineer] },
     
     // Accountant
     { path: '/accountant/dashboard', label: 'Обзор', icon: <HomeIcon className="w-5 h-5" />, roles: [Role.Accountant] },
@@ -79,6 +84,13 @@ const navItems: NavItem[] = [
     { path: '/accountant/appeals', label: 'Обращения', icon: <ChatBubbleLeftRightIcon className="w-5 h-5" />, roles: [Role.Accountant] },
     { path: '/accountant/action-logs', label: 'Журнал действий', icon: <ClockIcon className="w-5 h-5" />, roles: [Role.Accountant] },
     { path: '/accountant/check-closing', label: 'Закрытие чека', icon: <ReceiptIcon className="w-5 h-5" />, roles: [Role.Accountant] },
+    { path: '/accountant/auto-penalty', label: 'Авто-пени', icon: <CalculatorIcon className="w-5 h-5" />, roles: [Role.Accountant] },
+    { path: '/accountant/debt-restructuring', label: 'Реструктуризация', icon: <CalendarIcon className="w-5 h-5" />, roles: [Role.Accountant] },
+    { path: '/accountant/tax-reports', label: 'Налоговые отчеты', icon: <FileTextIcon className="w-5 h-5" />, roles: [Role.Accountant] },
+    { path: '/accountant/notifications', label: 'Уведомления', icon: <BellIcon className="w-5 h-5" />, roles: [Role.Accountant] },
+    { path: '/accountant/budget-planning', label: 'Бюджетное планирование', icon: <CalculatorIcon className="w-5 h-5" />, roles: [Role.Accountant] },
+    { path: '/accountant/profitability', label: 'Анализ рентабельности', icon: <TrendingUpIcon className="w-5 h-5" />, roles: [Role.Accountant] },
+    { path: '/accountant/accounts-payable', label: 'Кредиторская задолженность', icon: <DollarSignIcon className="w-5 h-5" />, roles: [Role.Accountant] },
 ];
 
 const Sidebar: React.FC = () => {

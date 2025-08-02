@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useContext, useMemo } from 'react';
-import { api } from '../../../services/api';
+import { api } from "../../../services/mock-api"
 import { Expense, User, ExpenseCategory, ExpenseCategoryLabels } from '../../../types';
 import Card from '../../../components/ui/Card';
 import Modal, { ConfirmationModal } from '../../../components/ui/Modal';

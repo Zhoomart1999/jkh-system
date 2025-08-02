@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import Card from '../../../components/ui/Card';
-import { api } from '../../../services/api';
+import { api } from "../../../services/mock-api"
 import { PlannedMaintenanceTask, MaintenanceStatus } from '../../../types';
 
 const formatDate = (dateString: string) => new Date(dateString).toLocaleDateString('ru-RU');

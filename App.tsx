@@ -6,6 +6,7 @@ import MainLayout from './components/layout/MainLayout';
 import { Role } from './types';
 import NotFoundPage from './pages/NotFoundPage';
 import PageLoader from './components/ui/PageLoader';
+import PWAInstallPrompt from './components/ui/PWAInstallPrompt';
 
 // Portal Imports
 import { PortalAuthContext } from './context/PortalAuthContext';
@@ -36,6 +37,7 @@ const AccrualsPage = lazy(() => import('./pages/engineer/AccrualsPage'));
 const InfrastructurePage = lazy(() => import('./pages/engineer/InfrastructurePage'));
 const ReportsPage = lazy(() => import('./pages/engineer/ReportsPage'));
 const CheckClosingPage = lazy(() => import('./pages/engineer/CheckClosingPage'));
+const BulkReadingsPage = lazy(() => import('./pages/engineer/BulkReadingsPage'));
 
 // Accountant Pages
 const AccountantDashboard = lazy(() => import('./pages/accountant/dashboard/AccountantDashboard'));
@@ -49,6 +51,17 @@ const DebtorsPage = lazy(() => import('./pages/accountant/DebtorsPage'));
 const ManualChargesPage = lazy(() => import('./pages/accountant/ManualChargesPage'));
 const DocumentsPage = lazy(() => import('./pages/accountant/DocumentsPage'));
 const AppealsPage = lazy(() => import('./pages/accountant/AppealsPage'));
+const ActionLogsPage = lazy(() => import('./pages/accountant/ActionLogsPage'));
+const AutoPenaltyPage = lazy(() => import('./pages/accountant/AutoPenaltyPage'));
+const DebtRestructuringPage = lazy(() => import('./pages/accountant/DebtRestructuringPage'));
+const TaxReportsPage = lazy(() => import('./pages/accountant/TaxReportsPage'));
+const NotificationsPage = lazy(() => import('./pages/accountant/NotificationsPage'));
+const BudgetPlanningPage = lazy(() => import('./pages/accountant/BudgetPlanningPage'));
+const ProfitabilityAnalysisPage = lazy(() => import('./pages/accountant/ProfitabilityAnalysisPage'));
+const AccountsPayablePage = lazy(() => import('./pages/accountant/AccountsPayablePage'));
+const WorkSchedulerPage = lazy(() => import('./pages/engineer/WorkSchedulerPage'));
+const AutoWarehousePage = lazy(() => import('./pages/engineer/AutoWarehousePage'));
+const WaterQualityGraphsPage = lazy(() => import('./pages/engineer/WaterQualityGraphsPage'));
 
 // Portal Pages
 const PortalDashboardPage = lazy(() => import('./pages/portal/PortalDashboardPage'));
@@ -64,15 +77,37 @@ interface ProtectedRouteProps {
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowedRoles }) => {
     const auth = useContext(AuthContext);
 
+    console.log('=== PROTECTED ROUTE DEBUG ===');
+    console.log('ProtectedRoute: auth object:', auth);
+    console.log('ProtectedRoute: auth?.user:', auth?.user);
+    console.log('ProtectedRoute: auth?.user?.role:', auth?.user?.role);
+    console.log('ProtectedRoute: auth?.user?.role type:', typeof auth?.user?.role);
+    console.log('ProtectedRoute: allowedRoles:', allowedRoles);
+    console.log('ProtectedRoute: allowedRoles types:', allowedRoles.map(r => typeof r));
+
     if (!auth?.user) {
+        console.log('ProtectedRoute: No user, redirecting to login');
         return <Navigate to="/login" replace />;
     }
 
+    if (!auth.user.role) {
+        console.log('ProtectedRoute: No user role, redirecting to login');
+        return <Navigate to="/login" replace />;
+    }
+
+    console.log('ProtectedRoute: User role exists:', auth.user.role);
+    console.log('ProtectedRoute: Checking if role is allowed...');
+    console.log('ProtectedRoute: auth.user.role in allowedRoles:', allowedRoles.includes(auth.user.role));
+
     if (!allowedRoles.includes(auth.user.role)) {
+        console.log('ProtectedRoute: User role not allowed, redirecting to dashboard');
         const defaultPath = `/${auth.user.role}/dashboard`;
+        console.log('ProtectedRoute: Redirecting to:', defaultPath);
         return <Navigate to={defaultPath} replace />;
     }
 
+    console.log('ProtectedRoute: Access granted');
+    console.log('=== PROTECTED ROUTE DEBUG END ===');
     return <>{children}</>;
 };
 
@@ -86,8 +121,9 @@ const PortalProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ childre
 
 const App: React.FC = () => {
     return (
-        <Suspense fallback={<PageLoader />}>
-            <Routes>
+        <>
+            <Suspense fallback={<PageLoader />}>
+                <Routes>
                 <Route path="/" element={<LoginPage />} />
                 <Route path="/login" element={<LoginPage />} />
                 
@@ -125,6 +161,10 @@ const App: React.FC = () => {
                     <Route path="infrastructure" element={<InfrastructurePage />} />
                     <Route path="reports" element={<ReportsPage />} />
                     <Route path="check-closing" element={<CheckClosingPage />} />
+                                                <Route path="bulk-readings" element={<BulkReadingsPage />} />
+                            <Route path="work-scheduler" element={<WorkSchedulerPage />} />
+                            <Route path="auto-warehouse" element={<AutoWarehousePage />} />
+                            <Route path="water-quality" element={<WaterQualityGraphsPage />} />
                     <Route index element={<Navigate to="dashboard" replace />} />
                 </Route>
 
@@ -145,6 +185,15 @@ const App: React.FC = () => {
                     <Route path="manual-charges" element={<ManualChargesPage />} />
                     <Route path="documents" element={<DocumentsPage />} />
                     <Route path="appeals" element={<AppealsPage />} />
+                    <Route path="action-logs" element={<ActionLogsPage />} />
+                    <Route path="check-closing" element={<CheckClosingPage />} />
+                    <Route path="auto-penalty" element={<AutoPenaltyPage />} />
+                                                    <Route path="debt-restructuring" element={<DebtRestructuringPage />} />
+                                <Route path="tax-reports" element={<TaxReportsPage />} />
+                                <Route path="notifications" element={<NotificationsPage />} />
+                                <Route path="budget-planning" element={<BudgetPlanningPage />} />
+                                <Route path="profitability" element={<ProfitabilityAnalysisPage />} />
+                                <Route path="accounts-payable" element={<AccountsPayablePage />} />
                     <Route index element={<Navigate to="dashboard" replace />} />
                 </Route>
                 
@@ -163,8 +212,10 @@ const App: React.FC = () => {
                 </Route>
 
                 <Route path="*" element={<NotFoundPage />} />
-            </Routes>
-        </Suspense>
+                </Routes>
+            </Suspense>
+            <PWAInstallPrompt />
+        </>
     );
 };
 

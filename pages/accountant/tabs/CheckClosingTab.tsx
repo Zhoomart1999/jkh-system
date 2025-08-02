@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useContext } from 'react';
-import { api } from '../../../services/api';
+import { api } from "../../../services/mock-api"
 import { CheckClosingPayment, CheckClosing, User, Role, PaymentMethod, BankType } from '../../../types';
 import Card from '../../../components/ui/Card';
 import { AuthContext } from '../../../context/AuthContext';

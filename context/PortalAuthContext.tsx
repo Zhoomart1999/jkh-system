@@ -1,7 +1,7 @@
 
 import React, { createContext, useState, useEffect, useCallback } from 'react';
 import { Abonent } from '../types';
-import { api } from '../services/api';
+import { api } from "../services/mock-api";
 
 interface PortalAuthContextType {
   abonent: Abonent | null;
