@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { api } from "../../services/mock-api"
+import { api } from "../../src/firebase/real-api"
 import { ActionLog } from '../../types';
 import Card from '../../components/ui/Card';
 import { ClockIcon, DownloadIcon, FilterIcon } from '../../components/ui/Icons';
@@ -43,8 +43,15 @@ const ActionLogsPage: React.FC = () => {
     };
 
     const handleExport = () => {
-        // Заглушка для экспорта
-        alert('Функция экспорта временно недоступна');
+        // Базовая функция экспорта
+        const dataStr = JSON.stringify(logs, null, 2);
+        const dataBlob = new Blob([dataStr], { type: 'application/json' });
+        const url = URL.createObjectURL(dataBlob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = 'action-logs.json';
+        link.click();
+        URL.revokeObjectURL(url);
     };
 
     if (loading) {

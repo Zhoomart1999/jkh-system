@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { api } from "../../services/mock-api"
+import { api } from "../../src/firebase/real-api";
 import Card from '../../components/ui/Card';
-import { CalculatorIcon, TrendingUpIcon, TrendingDownIcon, CalendarIcon, DollarSignIcon } from '../../components/ui/Icons';
+import { PlusIcon, TrashIcon, EditIcon, CheckIcon, ChartBarIcon, CalendarIcon } from '../../components/ui/Icons';
+import { useNotifications } from '../../context/NotificationContext';
 
 interface BudgetItem {
     id: string;
@@ -29,6 +30,7 @@ interface BudgetPlan {
 }
 
 const BudgetPlanningPage: React.FC = () => {
+    const { showNotification } = useNotifications();
     const [budgetItems, setBudgetItems] = useState<BudgetItem[]>([]);
     const [budgetPlans, setBudgetPlans] = useState<BudgetPlan[]>([]);
     const [loading, setLoading] = useState(true);
@@ -156,9 +158,17 @@ const BudgetPlanningPage: React.FC = () => {
                 notes: ''
             });
             
-            alert('Бюджетный план создан!');
+            showNotification({
+                type: 'success',
+                title: 'План создан',
+                message: 'Бюджетный план создан!'
+            });
         } catch (error) {
-            alert('Ошибка при создании плана');
+            showNotification({
+                type: 'error',
+                title: 'Ошибка создания',
+                message: 'Ошибка при создании плана'
+            });
         } finally {
             setProcessing(false);
         }
@@ -193,9 +203,17 @@ const BudgetPlanningPage: React.FC = () => {
                 notes: ''
             });
             
-            alert('Статья бюджета добавлена!');
+            showNotification({
+                type: 'success',
+                title: 'Статья добавлена',
+                message: 'Статья бюджета добавлена!'
+            });
         } catch (error) {
-            alert('Ошибка при добавлении статьи');
+            showNotification({
+                type: 'error',
+                title: 'Ошибка добавления',
+                message: 'Ошибка при добавлении статьи'
+            });
         } finally {
             setProcessing(false);
         }
@@ -215,9 +233,17 @@ const BudgetPlanningPage: React.FC = () => {
                         : plan
                 )
             );
-            alert('Статус плана обновлен!');
+            showNotification({
+                type: 'success',
+                title: 'Статус обновлен',
+                message: 'Статус плана обновлен!'
+            });
         } catch (error) {
-            alert('Ошибка при обновлении статуса');
+            showNotification({
+                type: 'error',
+                title: 'Ошибка обновления',
+                message: 'Ошибка при обновлении статуса'
+            });
         } finally {
             setProcessing(false);
         }
@@ -277,7 +303,7 @@ const BudgetPlanningPage: React.FC = () => {
                 <Card>
                     <div className="flex justify-center items-center h-64">
                         <div className="text-center">
-                            <CalculatorIcon className="mx-auto h-12 w-12 text-slate-400 mb-4" />
+                            <CalendarIcon className="mx-auto h-12 w-12 text-slate-400 mb-4" />
                             <p className="text-slate-500">Загрузка данных...</p>
                         </div>
                     </div>
@@ -295,7 +321,7 @@ const BudgetPlanningPage: React.FC = () => {
                 <Card>
                     <div className="p-4">
                         <div className="flex items-center gap-3">
-                            <TrendingUpIcon className="w-8 h-8 text-green-500" />
+                            <ChartBarIcon className="w-8 h-8 text-green-500" />
                             <div>
                                 <div className="text-2xl font-bold text-green-600">
                                     {getTotalIncome().toLocaleString()} сом
@@ -308,7 +334,7 @@ const BudgetPlanningPage: React.FC = () => {
                 <Card>
                     <div className="p-4">
                         <div className="flex items-center gap-3">
-                            <TrendingDownIcon className="w-8 h-8 text-red-500" />
+                            <ChartBarIcon className="w-8 h-8 text-red-500" />
                             <div>
                                 <div className="text-2xl font-bold text-red-600">
                                     {getTotalExpenses().toLocaleString()} сом
@@ -321,7 +347,7 @@ const BudgetPlanningPage: React.FC = () => {
                 <Card>
                     <div className="p-4">
                         <div className="flex items-center gap-3">
-                            <DollarSignIcon className="w-8 h-8 text-blue-500" />
+                            <ChartBarIcon className="w-8 h-8 text-blue-500" />
                             <div>
                                 <div className={`text-2xl font-bold ${getBalance() >= 0 ? 'text-blue-600' : 'text-red-600'}`}>
                                     {getBalance().toLocaleString()} сом
@@ -350,7 +376,7 @@ const BudgetPlanningPage: React.FC = () => {
             <Card>
                 <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center gap-4">
-                        <CalculatorIcon className="w-6 h-6 text-slate-500" />
+                        <CalendarIcon className="w-6 h-6 text-slate-500" />
                         <h3 className="text-lg font-semibold">Создание бюджетного плана</h3>
                     </div>
                     <button
@@ -618,7 +644,7 @@ const BudgetPlanningPage: React.FC = () => {
 
                 {budgetPlans.length === 0 && (
                     <div className="text-center py-12">
-                        <CalculatorIcon className="mx-auto h-12 w-12 text-slate-400 mb-4" />
+                        <CalendarIcon className="mx-auto h-12 w-12 text-slate-400 mb-4" />
                         <h3 className="text-lg font-medium text-slate-900 mb-2">Нет бюджетных планов</h3>
                         <p className="text-slate-500">Создайте первый бюджетный план</p>
                     </div>
@@ -628,7 +654,7 @@ const BudgetPlanningPage: React.FC = () => {
             {/* Статьи бюджета */}
             <Card>
                 <div className="flex items-center gap-4 mb-4">
-                    <CalculatorIcon className="w-6 h-6 text-slate-500" />
+                    <CalendarIcon className="w-6 h-6 text-slate-500" />
                     <h3 className="text-lg font-semibold">Статьи бюджета</h3>
                 </div>
                 
@@ -697,7 +723,7 @@ const BudgetPlanningPage: React.FC = () => {
 
                 {budgetItems.length === 0 && (
                     <div className="text-center py-12">
-                        <CalculatorIcon className="mx-auto h-12 w-12 text-slate-400 mb-4" />
+                        <CalendarIcon className="mx-auto h-12 w-12 text-slate-400 mb-4" />
                         <h3 className="text-lg font-medium text-slate-900 mb-2">Нет статей бюджета</h3>
                         <p className="text-slate-500">Добавьте первые статьи в бюджетный план</p>
                     </div>

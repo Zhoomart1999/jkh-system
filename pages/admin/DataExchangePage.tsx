@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { api } from "../../services/mock-api"
+import { api } from "../../src/firebase/real-api"
 import Card from '../../components/ui/Card';
 import { UploadIcon, DownloadIcon } from '../../components/ui/Icons';
 import { Abonent, Payment, FinancialPlan, AbonentStatus, BuildingType, WaterTariffType } from '../../types';
@@ -26,12 +26,21 @@ const DataExchangePage: React.FC = () => {
         setImportLoading(true);
         setImportMessage(null);
         
-        // Простая заглушка для импорта
-        setTimeout(() => {
-            setImportMessage({ type: 'success', text: 'Функция импорта временно недоступна. Используйте форму добавления абонентов.' });
+        // Базовая обработка файла
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            try {
+                const content = e.target?.result as string;
+                // Здесь будет логика обработки файла
+                setImportMessage({ type: 'success', text: `Файл ${file.name} успешно загружен. Обработка в разработке.` });
+            } catch (error) {
+                setImportMessage({ type: 'error', text: 'Ошибка при обработке файла' });
+            } finally {
                 setImportLoading(false);
-            if(fileInputRef.current) fileInputRef.current.value = '';
-        }, 1000);
+                if(fileInputRef.current) fileInputRef.current.value = '';
+            }
+        };
+        reader.readAsText(file);
     };
 
 

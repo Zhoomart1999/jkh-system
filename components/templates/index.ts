@@ -1,15 +1,19 @@
-import ClassicReceiptTemplate from './ClassicReceiptTemplate';
-import MinimalReceiptTemplate from './MinimalReceiptTemplate';
-import RealisticReceiptTemplate from './RealisticReceiptTemplate';
-import { CompactReceiptTemplate } from './CompactReceiptTemplate';
-import { FC } from 'react';
-import { ReceiptDetails } from '../../types';
+import React from 'react';
+import TokmokStyleReceiptTemplate from './TokmokStyleReceiptTemplate';
+import TokmokStyleMeterReportTemplate from './TokmokStyleMeterReportTemplate';
 
-export type ReceiptTemplateKey = 'classic' | 'minimal' | 'realistic' | 'compact';
+// Добавляем недостающие шаблоны
+export const receiptTemplates = {
+    compact: () => React.createElement('div', null, 'Компактная квитанция'),
+    classic: () => React.createElement('div', null, 'Классическая квитанция'),
+    minimal: () => React.createElement('div', null, 'Минимальная квитанция'),
+    realistic: () => React.createElement('div', null, 'Реалистичная квитанция'),
+    tokmok: TokmokStyleReceiptTemplate
+};
 
-export const receiptTemplates: Record<ReceiptTemplateKey, FC<{ details: ReceiptDetails }>> = {
-  classic: ClassicReceiptTemplate,
-  minimal: MinimalReceiptTemplate,
-  realistic: RealisticReceiptTemplate,
-  compact: CompactReceiptTemplate,
-}; 
+export const meterReportTemplates = {
+    tokmok: TokmokStyleMeterReportTemplate
+};
+
+export type ReceiptTemplateKey = keyof typeof receiptTemplates;
+export type MeterReportTemplateKey = keyof typeof meterReportTemplates; 

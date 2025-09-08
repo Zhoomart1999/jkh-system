@@ -1,7 +1,7 @@
 
 import React, { createContext, useState, useEffect, useCallback } from 'react';
 import { Abonent } from '../types';
-import { api } from "../services/mock-api";
+import { api } from "../src/firebase/real-api";
 
 interface PortalAuthContextType {
   abonent: Abonent | null;

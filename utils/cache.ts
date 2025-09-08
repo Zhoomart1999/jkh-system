@@ -1,22 +1,44 @@
-// Простой кэш для оптимизации запросов к Firebase
-class Cache {
-  private cache = new Map<string, { data: any; timestamp: number; ttl: number }>();
+// Интерфейс для кэш элемента
+interface CacheItem<T> {
+  data: T;
+  timestamp: number;
+  ttl: number; // Time to live в миллисекундах
+}
 
-  set(key: string, data: any, ttl: number = 5 * 60 * 1000): void {
-    this.cache.set(key, {
+// Класс кэша
+class Cache {
+  private storage = new Map<string, CacheItem<any>>();
+  private maxSize = 100; // Maximum number of cached items
+
+  set<T>(key: string, data: T, ttl: number = 5 * 60 * 1000): void {
+    // Clean up expired items
+    this.cleanup();
+
+    // Remove oldest item if cache is full
+    if (this.storage.size >= this.maxSize) {
+      const oldestKey = this.storage.keys().next().value;
+      if (oldestKey) {
+        this.storage.delete(oldestKey);
+      }
+    }
+
+    this.storage.set(key, {
       data,
       timestamp: Date.now(),
       ttl
     });
   }
 
-  get(key: string): any | null {
-    const item = this.cache.get(key);
-    if (!item) return null;
+  get<T>(key: string): T | null {
+    const item = this.storage.get(key);
+    
+    if (!item) {
+      return null;
+    }
 
-    const isExpired = Date.now() - item.timestamp > item.ttl;
-    if (isExpired) {
-      this.cache.delete(key);
+    // Check if item is expired
+    if (Date.now() - item.timestamp > item.ttl) {
+      this.storage.delete(key);
       return null;
     }
 
@@ -24,31 +46,92 @@ class Cache {
   }
 
   has(key: string): boolean {
-    return this.get(key) !== null;
+    return this.storage.has(key);
   }
 
-  delete(key: string): void {
-    this.cache.delete(key);
+  delete(key: string): boolean {
+    return this.storage.delete(key);
   }
 
   clear(): void {
-    this.cache.clear();
+    this.storage.clear();
   }
 
   size(): number {
-    return this.cache.size;
+    this.cleanup();
+    return this.storage.size;
+  }
+
+  private cleanup(): void {
+    const now = Date.now();
+    for (const [key, item] of this.storage.entries()) {
+      if (now - item.timestamp > item.ttl) {
+        this.storage.delete(key);
+      }
+    }
   }
 }
 
+// Global cache instance
 export const cache = new Cache();
 
-// Ключи для кэширования
-export const CACHE_KEYS = {
+// Cache keys
+export const cacheKeys = {
   ABONENTS: 'abonents',
   USERS: 'users',
-  TARIFFS: 'tariffs',
   PAYMENTS: 'payments',
-  NOTIFICATIONS: 'notifications',
-  DASHBOARD_DATA: 'dashboard_data',
-  RECEIPT_DETAILS: 'receipt_details',
-} as const; 
+  REPORTS: 'reports',
+  SETTINGS: 'settings'
+} as const;
+
+// Cache TTL values (in milliseconds)
+export const cacheTTL = {
+  SHORT: 1 * 60 * 1000,      // 1 minute
+  MEDIUM: 5 * 60 * 1000,     // 5 minutes
+  LONG: 15 * 60 * 1000,      // 15 minutes
+  VERY_LONG: 60 * 60 * 1000  // 1 hour
+} as const;
+
+// Utility functions
+export const getCachedData = <T>(key: string): T | null => {
+  return cache.get<T>(key);
+};
+
+export const setCachedData = <T>(key: string, data: T, ttl: number = cacheTTL.MEDIUM): void => {
+  cache.set(key, data, ttl);
+};
+
+export const invalidateCache = (key?: string): void => {
+  if (key) {
+    cache.delete(key);
+  } else {
+    cache.clear();
+  }
+};
+
+export const isCached = (key: string): boolean => {
+  return cache.has(key);
+};
+
+// Cache utilities for collections
+export const cacheUtils = {
+  // Invalidate all cache keys that start with a prefix
+  invalidateByPrefix: (prefix: string): void => {
+    for (const key of cache['storage'].keys()) {
+      if (key.startsWith(prefix)) {
+        cache.delete(key);
+      }
+    }
+  },
+
+  // Get cache statistics
+  getStats: () => ({
+    size: cache.size(),
+    maxSize: cache['maxSize']
+  }),
+
+  // Clear expired items
+  cleanup: (): void => {
+    cache['cleanup']();
+  }
+}; 

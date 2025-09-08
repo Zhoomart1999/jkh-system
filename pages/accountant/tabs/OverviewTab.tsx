@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { api } from "../../../services/mock-api"
+import { api } from "../../../src/firebase/real-api"
 import { AccountantDashboardData, RecentTransaction } from '../../../types';
 import Card from '../../../components/ui/Card';
 import StatCard from '../../../components/ui/StatCard';
@@ -47,18 +47,18 @@ const OverviewTab: React.FC = () => {
     };
 
     // Подготовка данных для графика
-    const chartData = data.revenueVsExpense.map(item => ({
+    const chartData = (data.revenueVsExpense || []).map(item => ({
         ...item,
-        revenue: Math.round(item.revenue),
-        expense: Math.round(item.expense)
+        revenue: Math.round(item.revenue || 0),
+        expense: Math.round(item.expense || 0)
     }));
 
     return (
         <div className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <StatCard icon={<TrendingUpIcon />} title="Платежей сегодня" value={data.paymentsToday} />
-                <StatCard icon={<DollarSignIcon />} title="Доход в этом месяце" value={`${formatCurrency(data.totalPaidThisMonth)} сом`} />
-                <StatCard icon={<UsersIcon />} title="Общая задолженность" value={`${formatCurrency(data.totalDebt)} сом`} />
+                <StatCard icon={<TrendingUpIcon />} title="Платежей сегодня" value={data.paymentsToday || 0} />
+                <StatCard icon={<DollarSignIcon />} title="Доход в этом месяце" value={`${formatCurrency(data.totalPaidThisMonth || 0)} сом`} />
+                <StatCard icon={<UsersIcon />} title="Общая задолженность" value={`${formatCurrency(data.totalDebt || 0)} сом`} />
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
@@ -84,7 +84,7 @@ const OverviewTab: React.FC = () => {
                 <Card className="lg:col-span-2">
                      <h2 className="text-lg font-semibold mb-4">Последние транзакции</h2>
                      <ul className="space-y-1">
-                        {data.recentTransactions.map(tx => <TransactionRow key={tx.id} tx={tx} />)}
+                        {(data.recentTransactions || []).map(tx => <TransactionRow key={tx.id} tx={tx} />)}
                      </ul>
                 </Card>
             </div>

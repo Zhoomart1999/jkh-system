@@ -1,29 +1,74 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import Card from '../../../components/ui/Card';
-import { api } from "../../../services/mock-api"
+import { api } from "../../../src/firebase/real-api"
 import { TechnicalRequest, RequestStatus, RequestStatusLabels, RequestType, RequestTypeLabels, User, Role, RequestPriority, RequestPriorityLabels, Abonent } from '../../../types';
 import Pagination from '../../../components/ui/Pagination';
 import WorkOrderModal from './WorkOrderModal';
-import Modal from '../../../components/ui/Modal';
-import { SaveIcon } from '../../../components/ui/Icons';
+import { SaveIcon, PlusIcon, EyeIcon, ClockIcon, ExclamationTriangleIcon } from '../../../components/ui/Icons';
+import { useNotifications } from '../../../context/NotificationContext';
+
+// Простой Modal компонент
+const SimpleModal: React.FC<{
+    isOpen: boolean;
+    onClose: () => void;
+    title: string;
+    children: React.ReactNode;
+    size?: 'sm' | 'md' | 'lg' | 'xl';
+}> = ({ isOpen, onClose, title, children, size = 'md' }) => {
+    if (!isOpen) return null;
+
+    const sizeClasses = {
+        sm: 'max-w-sm',
+        md: 'max-w-md',
+        lg: 'max-w-lg',
+        xl: 'max-w-xl'
+    };
+
+    return (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className={`bg-white rounded-lg shadow-xl w-full mx-4 ${sizeClasses[size]}`}>
+                <div className="flex items-center justify-between p-6 border-b border-gray-200">
+                    <h3 className="text-lg font-semibold">{title}</h3>
+                    <button
+                        onClick={onClose}
+                        className="text-gray-400 hover:text-gray-600"
+                    >
+                        ✕
+                    </button>
+                </div>
+                <div className="p-6">
+                    {children}
+                </div>
+            </div>
+        </div>
+    );
+};
 
 const ITEMS_PER_PAGE = 10;
 const formatDate = (dateString: string) => new Date(dateString).toLocaleString('ru-RU');
 
 const PriorityBadge: React.FC<{ priority: RequestPriority }> = ({ priority }) => {
     const priorityMap = {
+        [RequestPriority.Low]: { text: 'Низкий', color: 'bg-slate-100 text-slate-800' },
         [RequestPriority.Normal]: { text: 'Обычный', color: 'bg-slate-100 text-slate-800' },
         [RequestPriority.High]: { text: 'Высокий', color: 'bg-yellow-100 text-yellow-800' },
         [RequestPriority.Critical]: { text: 'Критический', color: 'bg-red-100 text-red-800' },
+        [RequestPriority.Urgent]: { text: 'Срочный', color: 'bg-orange-100 text-orange-800' }
     };
     if (priority === RequestPriority.Normal) return null;
     return <span className={`ml-2 px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${priorityMap[priority].color}`}>{priorityMap[priority].text}</span>;
 };
 
 const CreateRequestModal: React.FC<{onClose: () => void}> = ({ onClose }) => {
+    const { showNotification } = useNotifications();
     const [abonents, setAbonents] = useState<Abonent[]>([]);
-    const [formData, setFormData] = useState({ abonentId: '', type: RequestType.LeakReport, priority: RequestPriority.Normal, details: '' });
+    const [formData, setFormData] = useState({ 
+        abonentId: '', 
+        type: RequestType.LeakReport, 
+        priority: RequestPriority.Normal, 
+        details: '' 
+    });
     const [isSaving, setIsSaving] = useState(false);
 
     useEffect(() => {
@@ -32,38 +77,173 @@ const CreateRequestModal: React.FC<{onClose: () => void}> = ({ onClose }) => {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        if (!formData.abonentId || !formData.details.trim()) {
+            showNotification({
+                type: 'warning',
+                title: 'Внимание',
+                message: 'Заполните все обязательные поля'
+            });
+            return;
+        }
+
         setIsSaving(true);
         try {
-            await api.createTechnicalRequest(formData);
+            await api.createTechnicalRequest({
+                abonentId: formData.abonentId,
+                type: formData.type,
+                status: RequestStatus.Pending,
+                priority: formData.priority,
+                description: formData.details
+            });
+            
+            showNotification({
+                type: 'success',
+                title: 'Заявка создана',
+                message: 'Техническая заявка успешно создана'
+            });
             onClose();
         } catch (error) {
-            console.error(error);
-            alert("Ошибка при создании заявки");
+            showNotification({
+                type: 'error',
+                title: 'Ошибка создания',
+                message: 'Ошибка при создании заявки'
+            });
         } finally {
             setIsSaving(false);
         }
     };
+
+    const selectedAbonent = abonents.find(a => a.id === formData.abonentId);
+
     return (
-        <Modal title="Создать новую заявку" isOpen={true} onClose={onClose}>
-            <form onSubmit={handleSubmit} className="space-y-4">
-                 <select value={formData.abonentId} onChange={e => setFormData({...formData, abonentId: e.target.value})} required className="w-full px-3 py-2 border rounded-md">
-                    <option value="">Выберите абонента</option>
-                    {abonents.map(a => <option key={a.id} value={a.id}>{a.fullName} - {a.address}</option>)}
-                </select>
-                 <select value={formData.type} onChange={e => setFormData({...formData, type: e.target.value as RequestType})} className="w-full px-3 py-2 border rounded-md">
-                    {Object.values(RequestType).map(t => <option key={t} value={t}>{RequestTypeLabels[t]}</option>)}
-                </select>
-                 <select value={formData.priority} onChange={e => setFormData({...formData, priority: e.target.value as RequestPriority})} className="w-full px-3 py-2 border rounded-md">
-                    {Object.values(RequestPriority).map(p => <option key={p} value={p}>{RequestPriorityLabels[p]}</option>)}
-                </select>
-                <textarea value={formData.details} onChange={e => setFormData({...formData, details: e.target.value})} required placeholder="Детали заявки..." rows={4} className="w-full px-3 py-2 border rounded-md"/>
-                <div className="flex justify-end gap-2"><button type="button" onClick={onClose} className="px-4 py-2 bg-slate-200 rounded-lg">Отмена</button><button type="submit" disabled={isSaving} className="px-4 py-2 bg-blue-600 text-white rounded-lg disabled:bg-blue-300"><SaveIcon className="w-5 h-5 inline mr-2"/>{isSaving ? 'Сохранение...' : 'Создать'}</button></div>
+        <SimpleModal isOpen={true} onClose={onClose} title="Создать новую заявку" size="lg">
+            <form onSubmit={handleSubmit} className="space-y-6">
+                {/* Выбор абонента */}
+                <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Выберите абонента *
+                    </label>
+                    <select 
+                        value={formData.abonentId} 
+                        onChange={e => setFormData({...formData, abonentId: e.target.value})} 
+                        required 
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    >
+                        <option value="">-- Выберите абонента --</option>
+                        {abonents.map(a => (
+                            <option key={a.id} value={a.id}>
+                                {a.fullName} - {a.address}
+                            </option>
+                        ))}
+                    </select>
+                </div>
+
+                {/* Информация об абоненте */}
+                {selectedAbonent && (
+                    <div className="bg-blue-50 p-4 rounded-lg">
+                        <h4 className="font-medium text-blue-900 mb-2">Информация об абоненте:</h4>
+                        <div className="grid grid-cols-2 gap-4 text-sm">
+                            <div>
+                                <span className="text-blue-700">ФИО:</span>
+                                <p className="font-medium">{selectedAbonent.fullName}</p>
+                            </div>
+                            <div>
+                                <span className="text-blue-700">Адрес:</span>
+                                <p className="font-medium">{selectedAbonent.address}</p>
+                            </div>
+                            <div>
+                                <span className="text-blue-700">Лицевой счет:</span>
+                                <p className="font-medium">{selectedAbonent.personalAccount}</p>
+                            </div>
+                            <div>
+                                <span className="text-blue-700">Телефон:</span>
+                                <p className="font-medium">{selectedAbonent.phone || 'Не указан'}</p>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* Тип заявки */}
+                <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Тип заявки
+                    </label>
+                    <select 
+                        value={formData.type} 
+                        onChange={e => setFormData({...formData, type: e.target.value as RequestType})} 
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    >
+                        {Object.values(RequestType).map(t => (
+                            <option key={t} value={t}>{RequestTypeLabels[t]}</option>
+                        ))}
+                    </select>
+                </div>
+
+                {/* Приоритет */}
+                <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Приоритет
+                    </label>
+                    <select 
+                        value={formData.priority} 
+                        onChange={e => setFormData({...formData, priority: e.target.value as RequestPriority})} 
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    >
+                        {Object.values(RequestPriority).map(p => (
+                            <option key={p} value={p}>{RequestPriorityLabels[p]}</option>
+                        ))}
+                    </select>
+                </div>
+
+                {/* Описание проблемы */}
+                <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Описание проблемы *
+                    </label>
+                    <textarea 
+                        value={formData.details} 
+                        onChange={e => setFormData({...formData, details: e.target.value})} 
+                        required
+                        rows={4}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        placeholder="Опишите проблему подробно..."
+                    />
+                </div>
+
+                {/* Кнопки */}
+                <div className="flex justify-end space-x-3 pt-4">
+                    <button
+                        type="button"
+                        onClick={onClose}
+                        className="px-4 py-2 text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200"
+                    >
+                        Отмена
+                    </button>
+                    <button
+                        type="submit"
+                        disabled={isSaving}
+                        className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-blue-400 flex items-center"
+                    >
+                        {isSaving ? (
+                            <>
+                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                                Создание...
+                            </>
+                        ) : (
+                            <>
+                                <SaveIcon className="w-5 h-5 mr-2" />
+                                Создать заявку
+                            </>
+                        )}
+                    </button>
+                </div>
             </form>
-        </Modal>
-    )
-}
+        </SimpleModal>
+    );
+};
 
 const RequestsTab: React.FC = () => {
+    const { showNotification } = useNotifications();
     const [requests, setRequests] = useState<TechnicalRequest[]>([]);
     const [users, setUsers] = useState<User[]>([]);
     const [loading, setLoading] = useState(true);
@@ -86,7 +266,11 @@ const RequestsTab: React.FC = () => {
             setRequests(requestsData);
             setUsers(usersData.filter(u => u.role === Role.Engineer || u.role === Role.Controller));
         } catch (error) {
-            console.error("Failed to fetch data", error);
+            showNotification({
+                type: 'error',
+                title: 'Ошибка загрузки',
+                message: 'Не удалось загрузить заявки'
+            });
         } finally {
             setLoading(false);
         }
@@ -108,9 +292,9 @@ const RequestsTab: React.FC = () => {
     
     const filteredRequests = useMemo(() => {
         return requests.filter(req => {
-            const termMatch = req.abonentName.toLowerCase().includes(filters.term.toLowerCase()) ||
-                              req.abonentAddress.toLowerCase().includes(filters.term.toLowerCase()) ||
-                              req.details.toLowerCase().includes(filters.term.toLowerCase());
+            const termMatch = (req.abonentName || '').toLowerCase().includes(filters.term.toLowerCase()) ||
+                              (req.abonentAddress || '').toLowerCase().includes(filters.term.toLowerCase()) ||
+                              (req.description || '').toLowerCase().includes(filters.term.toLowerCase());
             const statusMatch = filters.status === 'all' || req.status === filters.status;
             const priorityMatch = filters.priority === 'all' || req.priority === filters.priority;
             return termMatch && statusMatch && priorityMatch;
@@ -169,19 +353,28 @@ const RequestsTab: React.FC = () => {
                         </thead>
                         <tbody className="bg-white divide-y divide-slate-200">
                             {paginatedRequests.map(req => (
-                                <tr key={req.id} className="hover:bg-slate-50 cursor-pointer" onClick={() => setSelectedRequest(req)}>
-                                    <td className="px-4 py-4 whitespace-nowrap text-sm">{formatDate(req.createdAt)}</td>
-                                    <td className="px-4 py-4 whitespace-nowrap text-sm font-medium">
-                                        <div>{req.abonentName}</div>
-                                        <div className="text-xs text-slate-500" title={req.details}>{req.abonentAddress}</div>
+                                <tr key={req.id} className="hover:bg-slate-50">
+                                    <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-900">{formatDate(req.createdAt)}</td>
+                                    <td className="px-4 py-3 whitespace-nowrap text-sm">
+                                        <div>
+                                            <div className="font-medium text-slate-900">{req.abonentName || 'Не указано'}</div>
+                                            <div className="text-slate-500">{req.abonentAddress || 'Не указано'}</div>
+                                        </div>
                                     </td>
-                                    <td className="px-4 py-4 whitespace-nowrap text-sm">
-                                        {RequestTypeLabels[req.type]}
-                                        <PriorityBadge priority={req.priority} />
+                                    <td className="px-4 py-3 whitespace-nowrap text-sm">
+                                        <div className="flex items-center">
+                                            <span>{RequestTypeLabels[req.type]}</span>
+                                            <PriorityBadge priority={req.priority} />
+                                        </div>
                                     </td>
-                                    <td className="px-4 py-4 whitespace-nowrap text-sm">{req.assignedToName || 'Не назначен'}</td>
-                                    <td className="px-4 py-4 whitespace-nowrap">
+                                    <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
+                                        {req.assignedToId ? 'Назначен' : 'Не назначен'}
+                                    </td>
+                                    <td className="px-4 py-3 whitespace-nowrap text-sm">
                                         <StatusBadge status={req.status} />
+                                    </td>
+                                    <td className="px-4 py-3 whitespace-nowrap text-sm font-medium">
+                                        <button onClick={() => setSelectedRequest(req)} className="text-blue-600 hover:text-blue-900">Просмотр</button>
                                     </td>
                                 </tr>
                             ))}

@@ -1,7 +1,6 @@
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User, Role } from '../types';
-import { usersApi } from '../src/firebase/api';
 
 interface AuthContextType {
   user: User | null;
@@ -46,24 +45,53 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setLoading(false);
   }, []);
 
-  // Функция входа с Firebase
+  // Простая функция входа с прямыми PIN-кодами
   const login = async (pin: string): Promise<boolean> => {
     try {
       setLoading(true);
+      console.log('🔐 Попытка входа с PIN:', pin);
       
-      // Ищем пользователя в Firestore по PIN
-      const userData = await usersApi.getUserByPin(pin);
+      // Прямые PIN-коды как было раньше
+      const users: { [key: string]: User } = {
+        '22222222': {
+          id: '1',
+          name: 'Инженер',
+          role: Role.Engineer,
+          pin: '22222222',
+          isActive: true
+        },
+        '11111111': {
+          id: '2',
+          name: 'Администратор',
+          role: Role.Admin,
+          pin: '11111111',
+          isActive: true
+        },
+        '33333333': {
+          id: '3',
+          name: 'Бухгалтер',
+          role: Role.Accountant,
+          pin: '33333333',
+          isActive: true
+        }
+      };
       
-      if (!userData) {
-        return false;
+      console.log('📋 Доступные пользователи:', Object.keys(users));
+      
+      const userData = users[pin];
+      console.log('👤 Найденный пользователь:', userData);
+      
+      if (userData) {
+        setUser(userData);
+        localStorage.setItem('user', JSON.stringify(userData));
+        console.log('✅ Вход успешен для:', userData.name);
+        return true;
       }
-
-      // Устанавливаем пользователя
-      setUser(userData);
-      localStorage.setItem('user', JSON.stringify(userData));
       
-      return true;
+      console.log('❌ Пользователь не найден для PIN:', pin);
+      return false;
     } catch (error) {
+      console.error('💥 Ошибка при входе:', error);
       return false;
     } finally {
       setLoading(false);

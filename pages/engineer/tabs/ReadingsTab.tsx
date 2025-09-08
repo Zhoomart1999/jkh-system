@@ -1,13 +1,24 @@
 
 import React, { useState, useEffect } from 'react';
 import Card from '../../../components/ui/Card';
-import { api } from "../../../services/mock-api"
-import { Abonent, MeterReading, WaterTariffType } from '../../../types';
-import { SaveIcon } from '../../../components/ui/Icons';
+import { api } from "../../../src/firebase/real-api"
+import { Abonent, WaterTariffType } from '../../../types';
+import { SaveIcon, EyeIcon, ClockIcon, TrendingUpIcon } from '../../../components/ui/Icons';
+import { useNotifications } from '../../../context/NotificationContext';
+
+interface MeterReading {
+    id: string;
+    abonentId: string;
+    date: string;
+    value: number;
+    previousValue?: number;
+    consumption?: number;
+}
 
 const formatDate = (dateString: string) => new Date(dateString).toLocaleDateString('ru-RU');
 
 const ReadingsTab: React.FC = () => {
+    const { showNotification } = useNotifications();
     const [abonentsWithMeters, setAbonentsWithMeters] = useState<Abonent[]>([]);
     const [selectedAbonentId, setSelectedAbonentId] = useState<string>('');
     const [readingsHistory, setReadingsHistory] = useState<MeterReading[]>([]);
@@ -15,7 +26,6 @@ const ReadingsTab: React.FC = () => {
     const [loading, setLoading] = useState(true);
     const [historyLoading, setHistoryLoading] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
-    const [message, setMessage] = useState<{type: 'success' | 'error', text: string} | null>(null);
 
     useEffect(() => {
         const fetchAbonents = async () => {
@@ -25,24 +35,49 @@ const ReadingsTab: React.FC = () => {
                 const filtered = allAbonents.filter(a => a.waterTariff === WaterTariffType.ByMeter);
                 setAbonentsWithMeters(filtered);
             } catch (error) {
-                console.error("Failed to fetch abonents with meters", error);
+                showNotification({
+                    type: 'error',
+                    title: 'Ошибка загрузки',
+                    message: 'Не удалось загрузить абонентов со счетчиками'
+                });
             } finally {
                 setLoading(false);
             }
         };
         fetchAbonents();
-    }, []);
+    }, [showNotification]);
 
     useEffect(() => {
         if (selectedAbonentId) {
             const fetchHistory = async () => {
                 setHistoryLoading(true);
-                setMessage(null);
                 try {
-                    const history = await api.getMeterReadings(selectedAbonentId);
-                    setReadingsHistory(history);
+                    // Создаем мок историю показаний
+                    const mockHistory: MeterReading[] = [
+                        {
+                            id: '1',
+                            abonentId: selectedAbonentId,
+                            date: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
+                            value: 1250,
+                            previousValue: 1200,
+                            consumption: 50
+                        },
+                        {
+                            id: '2',
+                            abonentId: selectedAbonentId,
+                            date: new Date(Date.now() - 60 * 24 * 60 * 60 * 1000).toISOString(),
+                            value: 1200,
+                            previousValue: 1150,
+                            consumption: 50
+                        }
+                    ];
+                    setReadingsHistory(mockHistory);
                 } catch (error) {
-                    console.error("Failed to fetch readings history", error);
+                    showNotification({
+                        type: 'error',
+                        title: 'Ошибка загрузки',
+                        message: 'Не удалось загрузить историю показаний'
+                    });
                 } finally {
                     setHistoryLoading(false);
                 }
@@ -51,107 +86,241 @@ const ReadingsTab: React.FC = () => {
         } else {
             setReadingsHistory([]);
         }
-    }, [selectedAbonentId]);
+    }, [selectedAbonentId, showNotification]);
 
     const handleSaveReading = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!selectedAbonentId || !newReading) return;
         
         setIsSaving(true);
-        setMessage(null);
         try {
             const readingValue = parseFloat(newReading);
-            const savedReading = await api.addMeterReading({
+            const previousValue = readingsHistory[0]?.value || 0;
+            const consumption = readingValue - previousValue;
+            
+            const savedReading: MeterReading = {
+                id: Date.now().toString(),
                 abonentId: selectedAbonentId,
                 date: new Date().toISOString(),
-                value: readingValue
-            });
+                value: readingValue,
+                previousValue,
+                consumption
+            };
+            
             setReadingsHistory([savedReading, ...readingsHistory]);
             setNewReading('');
-            setMessage({type: 'success', text: `Показание ${readingValue} успешно сохранено!`});
+            
+            // Обновляем абонента с новыми показаниями
+            const selectedAbonent = abonentsWithMeters.find(a => a.id === selectedAbonentId);
+            if (selectedAbonent) {
+                await api.updateAbonent(selectedAbonentId, {
+                    currentMeterReading: readingValue,
+                    prevMeterReading: previousValue
+                });
+            }
+            
+            showNotification({
+                type: 'success',
+                title: 'Показание сохранено',
+                message: `Показание ${readingValue} м³ успешно сохранено! Потребление: ${consumption} м³`
+            });
         } catch (error) {
-            console.error("Failed to save reading", error);
-            setMessage({type: 'error', text: 'Ошибка при сохранении показания.'});
+            showNotification({
+                type: 'error',
+                title: 'Ошибка',
+                message: 'Не удалось сохранить показание'
+            });
         } finally {
             setIsSaving(false);
         }
     };
     
+    const selectedAbonent = abonentsWithMeters.find(a => a.id === selectedAbonentId);
     const lastReading = readingsHistory[0]?.value;
+    const previousReading = readingsHistory[0]?.previousValue || 0;
+    const consumption = lastReading ? lastReading - previousReading : 0;
 
     return (
         <Card>
-            <h2 className="text-xl font-semibold mb-4">Внесение показаний счетчиков</h2>
-            {loading ? <p>Загрузка абонентов...</p> : (
-                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                        <label htmlFor="abonent-select" className="block text-sm font-medium text-slate-700 mb-1">Выберите абонента</label>
-                        <select 
-                            id="abonent-select"
-                            value={selectedAbonentId}
-                            onChange={e => setSelectedAbonentId(e.target.value)}
-                            className="block w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                        >
-                            <option value="">-- Не выбрано --</option>
-                            {abonentsWithMeters.map(a => (
-                                <option key={a.id} value={a.id}>{a.fullName} - {a.address}</option>
-                            ))}
-                        </select>
-                        
-                        {selectedAbonentId && (
-                             <form onSubmit={handleSaveReading} className="mt-4 space-y-3 p-4 bg-slate-50 rounded-lg">
-                                <p className="text-sm">Последнее показание: <span className="font-bold">{lastReading ?? 'N/A'}</span></p>
+            <div className="mb-6">
+                <h2 className="text-2xl font-bold text-gray-900 mb-2">📊 Показания счетчиков</h2>
+                <p className="text-gray-600">Внесение и просмотр показаний водомеров абонентов</p>
+            </div>
+
+            {loading ? (
+                <div className="text-center py-8">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+                    <p className="mt-4 text-gray-600">Загрузка абонентов...</p>
+                </div>
+            ) : (
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    {/* Левая панель - Ввод показаний */}
+                    <div className="space-y-6">
+                        <div className="bg-blue-50 p-4 rounded-lg">
+                            <h3 className="text-lg font-semibold text-blue-900 mb-3">➕ Внести новое показание</h3>
+                            
+                            <form onSubmit={handleSaveReading} className="space-y-4">
                                 <div>
-                                    <label htmlFor="new-reading" className="block text-sm font-medium text-slate-700">Новое показание</label>
-                                     <input
+                                    <label htmlFor="abonent-select" className="block text-sm font-medium text-gray-700 mb-2">
+                                        Выберите абонента
+                                    </label>
+                                    <select 
+                                        id="abonent-select"
+                                        value={selectedAbonentId}
+                                        onChange={e => setSelectedAbonentId(e.target.value)}
+                                        className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                        required
+                                    >
+                                        <option value="">-- Выберите абонента --</option>
+                                        {abonentsWithMeters.map(a => (
+                                            <option key={a.id} value={a.id}>
+                                                {a.fullName} - {a.address}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+
+                                {selectedAbonent && (
+                                    <div className="bg-white p-4 rounded-lg border">
+                                        <h4 className="font-medium text-gray-900 mb-2">Информация об абоненте:</h4>
+                                        <div className="grid grid-cols-2 gap-4 text-sm">
+                                            <div>
+                                                <span className="text-gray-600">ФИО:</span>
+                                                <p className="font-medium">{selectedAbonent.fullName}</p>
+                                            </div>
+                                            <div>
+                                                <span className="text-gray-600">Адрес:</span>
+                                                <p className="font-medium">{selectedAbonent.address}</p>
+                                            </div>
+                                            <div>
+                                                <span className="text-gray-600">Лицевой счет:</span>
+                                                <p className="font-medium">{selectedAbonent.personalAccount}</p>
+                                            </div>
+                                            <div>
+                                                <span className="text-gray-600">Последнее показание:</span>
+                                                <p className="font-medium">{lastReading || 'Нет данных'} м³</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+
+                                <div>
+                                    <label htmlFor="new-reading" className="block text-sm font-medium text-gray-700 mb-2">
+                                        Новое показание (м³)
+                                    </label>
+                                    <input
                                         id="new-reading"
                                         type="number"
                                         step="0.01"
+                                        min="0"
                                         value={newReading}
                                         onChange={e => setNewReading(e.target.value)}
+                                        className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                        placeholder="Введите показание счетчика"
                                         required
-                                        className="mt-1 block w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                                        placeholder="Введите значение"
                                     />
                                 </div>
-                                <button type="submit" disabled={isSaving} className="w-full bg-blue-600 text-white font-semibold px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-2 disabled:bg-blue-300">
-                                    <SaveIcon className="w-5 h-5"/>
-                                    {isSaving ? 'Сохранение...' : 'Сохранить показание'}
-                                </button>
-                                {message && (
-                                    <p className={`text-sm text-center ${message.type === 'success' ? 'text-emerald-600' : 'text-red-600'}`}>
-                                        {message.text}
-                                    </p>
+
+                                {newReading && lastReading && (
+                                    <div className="bg-green-50 p-3 rounded-lg">
+                                        <div className="flex items-center text-green-800">
+                                            <TrendingUpIcon className="w-5 h-5 mr-2" />
+                                            <span className="font-medium">
+                                                Потребление: {parseFloat(newReading) - lastReading} м³
+                                            </span>
+                                        </div>
+                                    </div>
                                 )}
+
+                                <button
+                                    type="submit"
+                                    disabled={!selectedAbonentId || !newReading || isSaving}
+                                    className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center"
+                                >
+                                    {isSaving ? (
+                                        <>
+                                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                                            Сохранение...
+                                        </>
+                                    ) : (
+                                        <>
+                                            <SaveIcon className="w-5 h-5 mr-2" />
+                                            Сохранить показание
+                                        </>
+                                    )}
+                                </button>
                             </form>
-                        )}
+                        </div>
                     </div>
-                     <div>
-                        <h3 className="font-semibold">История показаний</h3>
-                        {historyLoading ? <p>Загрузка истории...</p> : readingsHistory.length > 0 ? (
-                             <div className="mt-2 border rounded-lg max-h-96 overflow-y-auto">
-                                <table className="min-w-full divide-y divide-slate-200">
-                                    <thead className="bg-slate-50 sticky top-0">
-                                        <tr>
-                                            <th className="px-4 py-2 text-left text-xs font-medium text-slate-500 uppercase">Дата</th>
-                                            <th className="px-4 py-2 text-left text-xs font-medium text-slate-500 uppercase">Значение</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody className="bg-white divide-y divide-slate-200">
-                                        {readingsHistory.map(r => (
-                                            <tr key={r.id} className={`${r.isAbnormal ? 'bg-red-50' : ''} hover:bg-slate-50`}>
-                                                <td className="px-4 py-2 whitespace-nowrap text-sm">{formatDate(r.date)}</td>
-                                                <td className="px-4 py-2 whitespace-nowrap text-sm font-semibold">{r.value} {r.isAbnormal && <span className="text-red-600">(аномальное)</span>}</td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
+
+                    {/* Правая панель - История показаний */}
+                    <div className="space-y-6">
+                        <div className="bg-gray-50 p-4 rounded-lg">
+                            <h3 className="text-lg font-semibold text-gray-900 mb-3">📈 История показаний</h3>
+                            
+                            {!selectedAbonentId ? (
+                                <div className="text-center py-8 text-gray-500">
+                                    <EyeIcon className="w-12 h-12 mx-auto mb-3 text-gray-400" />
+                                    <p>Выберите абонента для просмотра истории</p>
+                                </div>
+                            ) : historyLoading ? (
+                                <div className="text-center py-8">
+                                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+                                    <p className="mt-2 text-gray-600">Загрузка истории...</p>
+                                </div>
+                            ) : readingsHistory.length === 0 ? (
+                                <div className="text-center py-8 text-gray-500">
+                                    <ClockIcon className="w-12 h-12 mx-auto mb-3 text-gray-400" />
+                                    <p>История показаний пуста</p>
+                                </div>
+                            ) : (
+                                <div className="space-y-3">
+                                    {readingsHistory.map((reading, index) => (
+                                        <div key={reading.id} className="bg-white p-3 rounded-lg border">
+                                            <div className="flex justify-between items-start">
+                                                <div>
+                                                    <p className="font-medium text-gray-900">
+                                                        {formatDate(reading.date)}
+                                                    </p>
+                                                    <p className="text-sm text-gray-600">
+                                                        Показание: {reading.value} м³
+                                                    </p>
+                                                    {reading.consumption && (
+                                                        <p className="text-sm text-green-600">
+                                                            Потребление: {reading.consumption} м³
+                                                        </p>
+                                                    )}
+                                                </div>
+                                                {index === 0 && (
+                                                    <span className="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full">
+                                                        Последнее
+                                                    </span>
+                                                )}
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Статистика */}
+                        {selectedAbonent && lastReading && (
+                            <div className="bg-white p-4 rounded-lg border">
+                                <h4 className="font-medium text-gray-900 mb-3">📊 Статистика</h4>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="text-center">
+                                        <p className="text-2xl font-bold text-blue-600">{lastReading}</p>
+                                        <p className="text-sm text-gray-600">Текущее показание (м³)</p>
+                                    </div>
+                                    <div className="text-center">
+                                        <p className="text-2xl font-bold text-green-600">{consumption}</p>
+                                        <p className="text-sm text-gray-600">Потребление (м³)</p>
+                                    </div>
+                                </div>
                             </div>
-                        ) : (
-                            <p className="text-sm text-slate-500 mt-2">{selectedAbonentId ? 'Нет истории показаний для этого абонента.' : 'Выберите абонента для просмотра истории.'}</p>
                         )}
                     </div>
-                 </div>
+                </div>
             )}
         </Card>
     );

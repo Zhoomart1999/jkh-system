@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useContext } from 'react';
-import { api } from "../../services/mock-api"
+import { api } from "../../src/firebase/real-api"
 import { AbonentPortalData } from '../../types';
 import { PortalAuthContext } from '../../context/PortalAuthContext';
 import Card from '../../components/ui/Card';

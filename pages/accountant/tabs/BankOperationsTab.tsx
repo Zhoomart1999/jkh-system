@@ -1,12 +1,14 @@
 import React, { useState, useEffect, useContext } from 'react';
-import { api } from "../../../services/mock-api"
+import { api } from "../../../src/firebase/real-api"
 import { BankStatementTransaction, BankType, Abonent } from '../../../types';
 import Card from '../../../components/ui/Card';
 import Modal from '../../../components/ui/Modal';
 import { ArrowUpTrayIcon, CheckIcon, XMarkIcon, EyeIcon } from '../../../components/ui/Icons';
 import { AuthContext } from '../../../context/AuthContext';
+import { useNotifications } from '../../../context/NotificationContext';
 
 const BankOperationsTab: React.FC = () => {
+    const { showNotification } = useNotifications();
     const [transactions, setTransactions] = useState<BankStatementTransaction[]>([]);
     const [abonents, setAbonents] = useState<Abonent[]>([]);
     const [loading, setLoading] = useState(true);
@@ -66,7 +68,11 @@ const BankOperationsTab: React.FC = () => {
             fetchData();
         } catch (error) {
             console.error('Failed to import transactions:', error);
-            alert('Ошибка при импорте транзакций');
+            showNotification({
+                type: 'error',
+                title: 'Ошибка импорта',
+                message: 'Ошибка при импорте транзакций'
+            });
         }
     };
 
@@ -84,7 +90,11 @@ const BankOperationsTab: React.FC = () => {
             fetchData();
         } catch (error) {
             console.error('Failed to confirm transaction:', error);
-            alert('Ошибка при подтверждении транзакции');
+            showNotification({
+                type: 'error',
+                title: 'Ошибка подтверждения',
+                message: 'Ошибка при подтверждении транзакции'
+            });
         }
     };
 

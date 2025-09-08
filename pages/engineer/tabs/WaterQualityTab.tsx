@@ -1,10 +1,39 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import Card from '../../../components/ui/Card';
-import { api } from "../../../services/mock-api"
+import { api } from "../../../src/firebase/real-api"
 import { WaterQualitySample } from '../../../types';
-import Modal from '../../../components/ui/Modal';
+// import Modal from '../../../components/ui/Modal';
 import { SaveIcon } from '../../../components/ui/Icons';
+
+// Простой Modal компонент
+const SimpleModal: React.FC<{
+    isOpen: boolean;
+    onClose: () => void;
+    title: string;
+    children: React.ReactNode;
+}> = ({ isOpen, onClose, title, children }) => {
+    if (!isOpen) return null;
+
+    return (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
+                <div className="flex items-center justify-between p-6 border-b border-gray-200">
+                    <h3 className="text-lg font-semibold">{title}</h3>
+                    <button
+                        onClick={onClose}
+                        className="text-gray-400 hover:text-gray-600"
+                    >
+                        ✕
+                    </button>
+                </div>
+                <div className="p-6">
+                    {children}
+                </div>
+            </div>
+        </div>
+    );
+};
 
 const formatDate = (dateString: string) => new Date(dateString).toLocaleDateString('ru-RU');
 
@@ -27,7 +56,11 @@ const WaterQualityFormModal: React.FC<{onSave: () => void, onClose: () => void}>
     };
 
     return (
-        <Modal title="Добавить пробу воды" isOpen={true} onClose={onClose}>
+        <SimpleModal
+            isOpen={true}
+            onClose={onClose}
+            title="Добавить пробу воды"
+        >
             <form onSubmit={handleSubmit} className="space-y-4">
                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <input type="date" value={formData.date} onChange={e => setFormData({...formData, date: e.target.value})} required className="px-3 py-2 border border-slate-300 rounded-md"/>
@@ -41,7 +74,7 @@ const WaterQualityFormModal: React.FC<{onSave: () => void, onClose: () => void}>
                     <button type="submit" disabled={isSaving} className="bg-blue-600 text-white font-semibold px-4 py-2 rounded-lg"><SaveIcon className="w-5 h-5 inline-block mr-2" />{isSaving ? 'Сохранение...' : 'Сохранить'}</button>
                 </div>
             </form>
-        </Modal>
+        </SimpleModal>
     )
 }
 

@@ -1,10 +1,41 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import Card from '../../../components/ui/Card';
-import { api } from "../../../services/mock-api"
+import Pagination from '../../../components/ui/Pagination';
+import { api } from "../../../src/firebase/real-api"
 import { InventoryItem } from '../../../types';
 import { EditIcon, SaveIcon } from '../../../components/ui/Icons';
-import Modal from '../../../components/ui/Modal';
+import { useNotifications } from '../../../context/NotificationContext';
+// import Modal from '../../../components/ui/Modal';
+
+// Простой Modal компонент
+const SimpleModal: React.FC<{
+    isOpen: boolean;
+    onClose: () => void;
+    title: string;
+    children: React.ReactNode;
+}> = ({ isOpen, onClose, title, children }) => {
+    if (!isOpen) return null;
+
+    return (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
+                <div className="flex items-center justify-between p-6 border-b border-gray-200">
+                    <h3 className="text-lg font-semibold">{title}</h3>
+                    <button
+                        onClick={onClose}
+                        className="text-gray-400 hover:text-gray-600"
+                    >
+                        ✕
+                    </button>
+                </div>
+                <div className="p-6">
+                    {children}
+                </div>
+            </div>
+        </div>
+    );
+};
 
 interface FormModalProps {
     item: InventoryItem | null;
@@ -33,14 +64,22 @@ const InventoryFormModal: React.FC<FormModalProps> = ({ item, onSave, onClose })
             onSave();
         } catch (error) {
             console.error("Failed to save inventory item:", error);
-            alert("Ошибка при сохранении данных.");
+            showNotification({
+                type: 'error',
+                title: 'Ошибка сохранения',
+                message: 'Ошибка при сохранении данных.'
+            });
         } finally {
             setIsSaving(false);
         }
     };
 
     return (
-        <Modal title={item ? `Редактировать: ${item.name}` : "Добавить на склад"} isOpen={true} onClose={onClose}>
+        <SimpleModal
+            isOpen={true /* uses conditional render above; keep true but modal is mounted only when open */}
+            onClose={onClose}
+            title={item ? `Редактировать: ${item.name}` : "Добавить на склад"}
+        >
             <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
                     <label className="block text-sm font-medium">Наименование</label>
@@ -66,15 +105,26 @@ const InventoryFormModal: React.FC<FormModalProps> = ({ item, onSave, onClose })
                     </button>
                 </div>
             </form>
-        </Modal>
+        </SimpleModal>
     );
 };
 
 const InventoryTab: React.FC = () => {
+    const { showNotification } = useNotifications();
     const [inventory, setInventory] = useState<InventoryItem[]>([]);
     const [loading, setLoading] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingItem, setEditingItem] = useState<InventoryItem | null>(null);
+    const [formData, setFormData] = useState({
+        name: '',
+        description: '',
+        quantity: '',
+        unit: '',
+        category: '',
+        location: '',
+        minQuantity: '',
+        supplier: ''
+    });
 
     const fetchData = async () => {
         setLoading(true);

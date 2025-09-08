@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { api } from "../../services/mock-api"
+import { api } from "../../src/firebase/real-api";
 import Card from '../../components/ui/Card';
-import { ExclamationTriangleIcon, CheckIcon, ClockIcon, DollarSignIcon, CalendarIcon } from '../../components/ui/Icons';
+import { PlusIcon, TrashIcon, EditIcon, CheckIcon, ClockIcon, BanknotesIcon } from '../../components/ui/Icons';
+import { useNotifications } from '../../context/NotificationContext';
 
 interface Supplier {
     id: string;
@@ -41,6 +42,7 @@ interface Payment {
 }
 
 const AccountsPayablePage: React.FC = () => {
+    const { showNotification } = useNotifications();
     const [suppliers, setSuppliers] = useState<Supplier[]>([]);
     const [invoices, setInvoices] = useState<Invoice[]>([]);
     const [payments, setPayments] = useState<Payment[]>([]);
@@ -218,9 +220,17 @@ const AccountsPayablePage: React.FC = () => {
                 paymentTerms: ''
             });
             
-            alert('Счет добавлен!');
+            showNotification({
+                type: 'success',
+                title: 'Счет добавлен',
+                message: 'Счет добавлен!'
+            });
         } catch (error) {
-            alert('Ошибка при добавлении счета');
+            showNotification({
+                type: 'error',
+                title: 'Ошибка добавления',
+                message: 'Ошибка при добавлении счета'
+            });
         } finally {
             setProcessing(false);
         }
@@ -277,9 +287,17 @@ const AccountsPayablePage: React.FC = () => {
                 notes: ''
             });
             
-            alert('Платеж добавлен!');
+            showNotification({
+                type: 'success',
+                title: 'Платеж добавлен',
+                message: 'Платеж добавлен!'
+            });
         } catch (error) {
-            alert('Ошибка при добавлении платежа');
+            showNotification({
+                type: 'error',
+                title: 'Ошибка добавления',
+                message: 'Ошибка при добавлении платежа'
+            });
         } finally {
             setProcessing(false);
         }
@@ -338,7 +356,7 @@ const AccountsPayablePage: React.FC = () => {
                 <Card>
                     <div className="flex justify-center items-center h-64">
                         <div className="text-center">
-                            <DollarSignIcon className="mx-auto h-12 w-12 text-slate-400 mb-4" />
+                            <BanknotesIcon className="mx-auto h-12 w-12 text-slate-400 mb-4" />
                             <p className="text-slate-500">Загрузка данных...</p>
                         </div>
                     </div>
@@ -356,7 +374,7 @@ const AccountsPayablePage: React.FC = () => {
                 <Card>
                     <div className="p-4">
                         <div className="flex items-center gap-3">
-                            <DollarSignIcon className="w-8 h-8 text-red-500" />
+                            <BanknotesIcon className="w-8 h-8 text-red-500" />
                             <div>
                                 <div className="text-2xl font-bold text-red-600">
                                     {getTotalPayable().toLocaleString()} сом
@@ -369,7 +387,7 @@ const AccountsPayablePage: React.FC = () => {
                 <Card>
                     <div className="p-4">
                         <div className="flex items-center gap-3">
-                            <ExclamationTriangleIcon className="w-8 h-8 text-orange-500" />
+                            <BanknotesIcon className="w-8 h-8 text-orange-500" />
                             <div>
                                 <div className="text-2xl font-bold text-orange-600">
                                     {getTotalOverdue().toLocaleString()} сом
@@ -411,7 +429,7 @@ const AccountsPayablePage: React.FC = () => {
             <Card>
                 <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center gap-4">
-                        <DollarSignIcon className="w-6 h-6 text-slate-500" />
+                        <BanknotesIcon className="w-6 h-6 text-slate-500" />
                         <h3 className="text-lg font-semibold">Добавление счета</h3>
                     </div>
                     <button
@@ -545,7 +563,7 @@ const AccountsPayablePage: React.FC = () => {
             <Card>
                 <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center gap-4">
-                        <DollarSignIcon className="w-6 h-6 text-slate-500" />
+                        <BanknotesIcon className="w-6 h-6 text-slate-500" />
                         <h3 className="text-lg font-semibold">Счета к оплате</h3>
                     </div>
                     <button
@@ -717,7 +735,7 @@ const AccountsPayablePage: React.FC = () => {
 
                 {invoices.length === 0 && (
                     <div className="text-center py-12">
-                        <DollarSignIcon className="mx-auto h-12 w-12 text-slate-400 mb-4" />
+                        <BanknotesIcon className="mx-auto h-12 w-12 text-slate-400 mb-4" />
                         <h3 className="text-lg font-medium text-slate-900 mb-2">Нет счетов к оплате</h3>
                         <p className="text-slate-500">Добавьте первые счета от поставщиков</p>
                     </div>

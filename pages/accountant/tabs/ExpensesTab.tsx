@@ -1,12 +1,13 @@
 
 import React, { useState, useEffect, useContext, useMemo } from 'react';
-import { api } from "../../../services/mock-api"
+import { api } from "../../../src/firebase/real-api"
 import { Expense, User, ExpenseCategory, ExpenseCategoryLabels } from '../../../types';
 import Card from '../../../components/ui/Card';
 import Modal, { ConfirmationModal } from '../../../components/ui/Modal';
 import Pagination from '../../../components/ui/Pagination';
 import { AuthContext } from '../../../context/AuthContext';
 import { EditIcon, TrashIcon, SaveIcon, FileTextIcon } from '../../../components/ui/Icons';
+import { useNotifications } from '../../../context/NotificationContext';
 
 const ITEMS_PER_PAGE = 10;
 const formatDate = (dateString: string | null | undefined) => dateString ? new Date(dateString).toLocaleDateString('ru-RU') : 'N/A';
@@ -46,7 +47,11 @@ const ExpenseFormModal: React.FC<ExpenseFormModalProps> = ({ expense, users, onS
         setIsSaving(true);
         const responsiblePerson = users.find(u => u.id === formData.responsiblePersonId);
         if(!responsiblePerson) {
-             alert('Responsible person not found');
+             showNotification({
+                 type: 'error',
+                 title: 'Ошибка',
+                 message: 'Ответственное лицо не найдено'
+             });
              setIsSaving(false);
              return;
         }
@@ -118,6 +123,7 @@ const ExpenseFormModal: React.FC<ExpenseFormModalProps> = ({ expense, users, onS
 };
 
 const ExpensesTab: React.FC = () => {
+    const { showNotification } = useNotifications();
     const [expenses, setExpenses] = useState<Expense[]>([]);
     const [loading, setLoading] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);

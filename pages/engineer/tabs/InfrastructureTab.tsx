@@ -1,16 +1,53 @@
 
 import React, { useState, useEffect } from 'react';
 import Card from '../../../components/ui/Card';
-import Modal from '../../../components/ui/Modal';
-import { api } from "../../../services/mock-api"
+// import Modal from '../../../components/ui/Modal';
+import { api } from "../../../src/firebase/real-api"
 import { InfrastructureZone } from '../../../types';
-import { MapPinIcon, SaveIcon } from '../../../components/ui/Icons';
+import { SaveIcon } from '../../../components/ui/Icons';
+import { useNotifications } from '../../../context/NotificationContext';
+
+// Простой Modal компонент
+const SimpleModal: React.FC<{
+    isOpen: boolean;
+    onClose: () => void;
+    title: string;
+    children: React.ReactNode;
+}> = ({ isOpen, onClose, title, children }) => {
+    if (!isOpen) return null;
+
+    return (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
+                <div className="flex items-center justify-between p-6 border-b border-gray-200">
+                    <h3 className="text-lg font-semibold">{title}</h3>
+                    <button
+                        onClick={onClose}
+                        className="text-gray-400 hover:text-gray-600"
+                    >
+                        ✕
+                    </button>
+                </div>
+                <div className="p-6">
+                    {children}
+                </div>
+            </div>
+        </div>
+    );
+};
 
 const InfrastructureTab: React.FC = () => {
+    const { showNotification } = useNotifications();
     const [zones, setZones] = useState<InfrastructureZone[]>([]);
     const [loading, setLoading] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const [newZoneName, setNewZoneName] = useState('');
+    const [editingZone, setEditingZone] = useState<InfrastructureZone | null>(null);
+    const [formData, setFormData] = useState({
+        name: '',
+        description: '',
+        coordinates: '',
+        type: 'zone'
+    });
     const [isSaving, setIsSaving] = useState(false);
     
     const fetchData = async () => {
@@ -41,7 +78,11 @@ const InfrastructureTab: React.FC = () => {
             fetchData(); // Refresh the list
         } catch (error) {
             console.error("Failed to add zone:", error);
-            alert("Не удалось добавить зону.");
+            showNotification({
+                type: 'error',
+                title: 'Ошибка добавления',
+                message: 'Не удалось добавить зону.'
+            });
         } finally {
             setIsSaving(false);
         }
@@ -61,7 +102,7 @@ const InfrastructureTab: React.FC = () => {
                 <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                     {zones.map(zone => (
                         <div key={zone.id} className="p-4 bg-slate-50 rounded-lg flex items-center">
-                            <MapPinIcon className="w-6 h-6 text-blue-500 mr-3" />
+                            {/* <MapPinIcon className="w-6 h-6 text-blue-500 mr-3" /> */}
                             <span className="font-medium text-slate-800">{zone.name}</span>
                         </div>
                     ))}
@@ -70,7 +111,11 @@ const InfrastructureTab: React.FC = () => {
             )}
 
             {isModalOpen && (
-                <Modal title="Добавить новую зону" isOpen={true} onClose={() => setIsModalOpen(false)}>
+                <SimpleModal
+                    isOpen={isModalOpen}
+                    onClose={() => setIsModalOpen(false)}
+                    title="Добавить новую зону"
+                >
                     <form onSubmit={handleAddZone} className="space-y-4">
                         <div>
                             <label htmlFor="zoneName" className="block text-sm font-medium text-slate-700">Название зоны</label>
@@ -92,7 +137,7 @@ const InfrastructureTab: React.FC = () => {
                             </button>
                         </div>
                     </form>
-                </Modal>
+                </SimpleModal>
             )}
         </Card>
     );

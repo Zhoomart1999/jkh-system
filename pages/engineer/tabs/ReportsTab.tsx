@@ -1,6 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { api } from "../../../src/firebase/real-api";
 import Card from '../../../components/ui/Card';
-import { api } from "../../../services/mock-api"
+import { FileTextIcon, DownloadIcon, ChartBarIcon, CalendarIcon } from '../../../components/ui/Icons';
+import { useNotifications } from '../../../context/NotificationContext';
 import { DebtorsReportItem, UsedMaterialReportItem } from '../../../types';
 
 const formatCurrency = (amount: number) => `${amount.toLocaleString('ru-RU', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} сом`;
@@ -10,6 +12,7 @@ const DebtorsReport = () => {
     const [minDebt, setMinDebt] = useState<number>(500);
     const [reportData, setReportData] = useState<DebtorsReportItem[] | null>(null);
     const [loading, setLoading] = useState(false);
+    const { showNotification } = useNotifications();
 
     const handleGenerateReport = async () => {
         setLoading(true);
@@ -18,7 +21,11 @@ const DebtorsReport = () => {
             setReportData(data);
         } catch (error) {
             console.error("Failed to generate debtors report:", error);
-            alert("Ошибка при создании отчета.");
+            showNotification({
+                type: 'error',
+                title: 'Ошибка создания',
+                message: 'Ошибка при создании отчета.'
+            });
         } finally {
             setLoading(false);
         }
@@ -73,6 +80,7 @@ const UsedMaterialsReport = () => {
         start: new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0],
         end: new Date().toISOString().split('T')[0],
     });
+    const { showNotification } = useNotifications();
 
     const handleGenerateReport = async () => {
         setLoading(true);
@@ -120,23 +128,27 @@ const UsedMaterialsReport = () => {
 }
 
 const ReportsTab: React.FC = () => {
-    const [activeReport, setActiveReport] = useState<ReportType>('debtors_report');
+    const { showNotification } = useNotifications();
+    const [activeTab, setActiveTab] = useState('debtors');
+    const [debtorsReport, setDebtorsReport] = useState<DebtorsReportItem[]>([]);
+    const [usedMaterialsReport, setUsedMaterialsReport] = useState<UsedMaterialReportItem[]>([]);
+    const [loading, setLoading] = useState(false);
 
     return (
         <Card>
             <div className="flex justify-between items-center mb-4">
                 <h2 className="text-xl font-semibold">Отчеты</h2>
                 <select
-                    value={activeReport}
-                    onChange={(e) => setActiveReport(e.target.value as ReportType)}
+                    value={activeTab}
+                    onChange={(e) => setActiveTab(e.target.value as ReportType)}
                     className="block px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                 >
                     <option value="debtors_report">Отчет по должникам</option>
                     <option value="used_materials_report">Отчет по материалам</option>
                 </select>
             </div>
-            {activeReport === 'debtors_report' && <DebtorsReport />}
-            {activeReport === 'used_materials_report' && <UsedMaterialsReport />}
+            {activeTab === 'debtors_report' && <DebtorsReport />}
+            {activeTab === 'used_materials_report' && <UsedMaterialsReport />}
         </Card>
     );
 };

@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
-import { api } from "../../services/mock-api"
-import { Abonent, MeterReading } from '../../types';
+import React, { useState, useRef } from 'react';
+import { api } from "../../src/firebase/real-api";
+import { Abonent } from '../../types';
 import Card from '../../components/ui/Card';
-import { UploadIcon, DownloadIcon, ExclamationTriangleIcon, CheckIcon, ClockIcon } from '../../components/ui/Icons';
+import { UploadIcon, DownloadIcon, CheckIcon, XIcon } from '../../components/ui/Icons';
+import { useNotifications } from '../../context/NotificationContext';
 
 interface ImportedReading {
     abonentId: string;
@@ -16,9 +17,12 @@ interface ImportedReading {
 }
 
 const BulkReadingsPage: React.FC = () => {
+    const { showNotification } = useNotifications();
     const [file, setFile] = useState<File | null>(null);
-    const [importedData, setImportedData] = useState<ImportedReading[]>([]);
+    const [importedData, setImportedData] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
+    const [previewData, setPreviewData] = useState<any[]>([]);
+    const fileInputRef = useRef<HTMLInputElement>(null);
     const [processing, setProcessing] = useState(false);
     const [currentMonth, setCurrentMonth] = useState(new Date().toISOString().slice(0, 7));
 
@@ -28,7 +32,11 @@ const BulkReadingsPage: React.FC = () => {
             setFile(uploadedFile);
             processFile(uploadedFile);
         } else {
-            alert('Пожалуйста, выберите CSV файл');
+            showNotification({
+                type: 'warning',
+                title: 'Файл не выбран',
+                message: 'Пожалуйста, выберите CSV файл'
+            });
         }
     };
 
@@ -44,7 +52,11 @@ const BulkReadingsPage: React.FC = () => {
             const missingColumns = requiredColumns.filter(col => !headers.includes(col));
             
             if (missingColumns.length > 0) {
-                alert(`Отсутствуют обязательные колонки: ${missingColumns.join(', ')}`);
+                showNotification({
+                    type: 'warning',
+                    title: 'Неверная структура файла',
+                    message: `Отсутствуют обязательные колонки: ${missingColumns.join(', ')}`
+                });
                 return;
             }
 
@@ -97,7 +109,11 @@ const BulkReadingsPage: React.FC = () => {
 
             setImportedData(readings);
         } catch (error) {
-            alert('Ошибка при обработке файла');
+            showNotification({
+                type: 'error',
+                title: 'Ошибка обработки',
+                message: 'Ошибка при обработке файла'
+            });
         } finally {
             setLoading(false);
         }
@@ -122,11 +138,19 @@ const BulkReadingsPage: React.FC = () => {
             // Имитация сохранения
             await new Promise(resolve => setTimeout(resolve, 2000));
             
-            alert(`Показания успешно сохранены для ${importedData.length} абонентов`);
+            showNotification({
+                type: 'success',
+                title: 'Сохранение завершено',
+                message: `Показания успешно сохранены для ${importedData.length} абонентов`
+            });
             setImportedData([]);
             setFile(null);
         } catch (error) {
-            alert('Ошибка при сохранении показаний');
+            showNotification({
+                type: 'error',
+                title: 'Ошибка сохранения',
+                message: 'Ошибка при сохранении показаний'
+            });
         } finally {
             setProcessing(false);
         }
@@ -297,7 +321,7 @@ const BulkReadingsPage: React.FC = () => {
                     {getAbnormalReadings().length > 0 && (
                         <div className="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
                             <div className="flex items-center gap-2 mb-2">
-                                <ExclamationTriangleIcon className="w-5 h-5 text-yellow-600" />
+                                <XIcon className="w-5 h-5 text-yellow-600" />
                                 <span className="font-medium text-yellow-900">Внимание: аномальные показания</span>
                             </div>
                             <p className="text-sm text-yellow-700">
@@ -323,7 +347,7 @@ const BulkReadingsPage: React.FC = () => {
                 <Card>
                     <div className="flex justify-center items-center h-64">
                         <div className="text-center">
-                            <ClockIcon className="mx-auto h-12 w-12 text-slate-400 mb-4" />
+                            <XIcon className="mx-auto h-12 w-12 text-slate-400 mb-4" />
                             <p className="text-slate-500">Обработка файла...</p>
                         </div>
                     </div>

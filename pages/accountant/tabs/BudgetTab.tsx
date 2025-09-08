@@ -2,9 +2,10 @@
 import React, { useState, useEffect } from 'react';
 import Card from '../../../components/ui/Card';
 import Modal, { ConfirmationModal } from '../../../components/ui/Modal';
-import { api } from "../../../services/mock-api"
+import { api } from "../../../src/firebase/real-api"
 import { FinancialPlan, ExpenseCategory, ExpenseCategoryLabels } from '../../../types';
 import { SaveIcon, EditIcon, TrashIcon } from '../../../components/ui/Icons';
+import { useNotifications } from '../../../context/NotificationContext';
 
 const formatDate = (date: string) => new Date(date).toLocaleDateString('ru-RU', { month: 'long', year: 'numeric' });
 const formatCurrency = (amount: number) => amount.toLocaleString('ru-RU') + ' сом';
@@ -56,7 +57,11 @@ const FinancialPlanFormModal: React.FC<PlanFormProps> = ({ plan, onSave, onClose
             onSave();
         } catch(error) {
             console.error("Failed to save plan", error);
-            alert("Ошибка при сохранении плана");
+            showNotification({
+                type: 'error',
+                title: 'Ошибка сохранения',
+                message: 'Ошибка при сохранении плана'
+            });
         } finally {
             setIsSaving(false);
         }
@@ -110,6 +115,7 @@ const FinancialPlanFormModal: React.FC<PlanFormProps> = ({ plan, onSave, onClose
 };
 
 const BudgetTab: React.FC = () => {
+    const { showNotification } = useNotifications();
     const [plans, setPlans] = useState<FinancialPlan[]>([]);
     const [loading, setLoading] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);

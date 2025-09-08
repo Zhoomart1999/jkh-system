@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { api } from "../../services/mock-api"
+import { api } from "../../src/firebase/real-api";
 import Card from '../../components/ui/Card';
-import { CalendarIcon, ClockIcon, CheckIcon, ExclamationTriangleIcon, PlusIcon, EditIcon, TrashIcon } from '../../components/ui/Icons';
+import { PlusIcon, TrashIcon, EditIcon, CheckIcon, ClockIcon, CalendarIcon } from '../../components/ui/Icons';
+import { useNotifications } from '../../context/NotificationContext';
 
 interface ScheduledWork {
     id: string;
@@ -21,6 +22,7 @@ interface ScheduledWork {
 }
 
 const WorkSchedulerPage: React.FC = () => {
+    const { showNotification } = useNotifications();
     const [scheduledWorks, setScheduledWorks] = useState<ScheduledWork[]>([]);
     const [loading, setLoading] = useState(true);
     const [showCreateForm, setShowCreateForm] = useState(false);
@@ -127,9 +129,17 @@ const WorkSchedulerPage: React.FC = () => {
                 notes: ''
             });
             
-            alert('Работа успешно запланирована!');
+            showNotification({
+                type: 'success',
+                title: 'Работа запланирована',
+                message: 'Работа успешно запланирована!'
+            });
         } catch (error) {
-            alert('Ошибка при создании работы');
+            showNotification({
+                type: 'error',
+                title: 'Ошибка планирования',
+                message: 'Ошибка при создании работы'
+            });
         } finally {
             setProcessing(false);
         }
@@ -145,9 +155,17 @@ const WorkSchedulerPage: React.FC = () => {
                         : work
                 )
             );
-            alert('Статус работы обновлен!');
+            showNotification({
+                type: 'success',
+                title: 'Статус обновлен',
+                message: 'Статус работы обновлен!'
+            });
         } catch (error) {
-            alert('Ошибка при обновлении статуса');
+            showNotification({
+                type: 'error',
+                title: 'Ошибка обновления',
+                message: 'Ошибка при обновлении статуса'
+            });
         } finally {
             setProcessing(false);
         }
@@ -159,9 +177,17 @@ const WorkSchedulerPage: React.FC = () => {
         setProcessing(true);
         try {
             setScheduledWorks(works => works.filter(work => work.id !== workId));
-            alert('Работа удалена!');
+            showNotification({
+                type: 'success',
+                title: 'Работа удалена',
+                message: 'Работа удалена!'
+            });
         } catch (error) {
-            alert('Ошибка при удалении работы');
+            showNotification({
+                type: 'error',
+                title: 'Ошибка удаления',
+                message: 'Ошибка при удалении работы'
+            });
         } finally {
             setProcessing(false);
         }

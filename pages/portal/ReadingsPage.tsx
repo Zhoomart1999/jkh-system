@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useContext } from 'react';
 import Card from '../../components/ui/Card';
-import { api } from "../../services/mock-api"
+import { api } from "../../src/firebase/real-api"
 import { MeterReading, WaterTariffType } from '../../types';
 import { PortalAuthContext } from '../../context/PortalAuthContext';
 import { SaveIcon } from '../../components/ui/Icons';

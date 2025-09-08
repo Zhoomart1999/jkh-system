@@ -1,10 +1,15 @@
 import React, { useState, useEffect, useRef } from 'react';
-import Modal from '../../../components/ui/Modal';
+// import Modal from '../../../components/ui/Modal';
 import { TechnicalRequest, User, InventoryItem, RequestStatus, RequestStatusLabels, RequestTypeLabels, WorkOrderDetails, RequestPriority, RequestPriorityLabels } from '../../../types';
-import { api } from "../../../services/mock-api"
+import { api } from "../../../src/firebase/real-api"
 import { SaveIcon, CameraIcon, ToolIcon, PrinterIcon } from '../../../components/ui/Icons';
-import PrintProvider from '../../../components/ui/PrintProvider';
+import { PrintProvider } from '../../../components/ui/PrintProvider';
 import WorkOrderPrintTemplate from '../../../components/templates/WorkOrderPrintTemplate';
+import { useNotifications } from '../../../context/NotificationContext';
+import { Modal } from '../../../components/ui/Modal';
+
+// Простой Modal компонент
+// Используем общий Modal
 
 interface WorkOrderModalProps {
     request: TechnicalRequest;
@@ -18,6 +23,7 @@ const WORK_ORDER_PRINT_STYLE = `
 `;
 
 const WorkOrderModal: React.FC<WorkOrderModalProps> = ({ request, users, onClose }) => {
+    const { showNotification } = useNotifications();
     const [status, setStatus] = useState<RequestStatus>(request.status);
     const [assignedToId, setAssignedToId] = useState<string>(request.assignedToId || '');
     const [priority, setPriority] = useState<RequestPriority>(request.priority);
@@ -77,7 +83,7 @@ const WorkOrderModal: React.FC<WorkOrderModalProps> = ({ request, users, onClose
             onClose();
         } catch (error) {
             console.error("Failed to save work order", error);
-            alert("Ошибка при сохранении наряда");
+            showNotification('error', 'Ошибка при сохранении наряда');
         } finally {
             setIsSaving(false);
         }
@@ -86,7 +92,7 @@ const WorkOrderModal: React.FC<WorkOrderModalProps> = ({ request, users, onClose
     const availableInventory = inventory.filter(i => i.quantity > 0 || usedMaterials?.some(um => um.itemId === i.id));
 
     return (
-        <Modal title={`Наряд: ${RequestTypeLabels[request.type]}`} isOpen={true} onClose={onClose} size="lg">
+        <Modal isOpen={true} onClose={onClose} title={`Наряд: ${RequestTypeLabels[request.type]}`} size="lg">
             {isPrinting && (
                 <PrintProvider onAfterPrint={() => setIsPrinting(false)} printStyle={WORK_ORDER_PRINT_STYLE}>
                     <WorkOrderPrintTemplate request={request} />

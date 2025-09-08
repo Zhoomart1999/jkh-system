@@ -1,11 +1,40 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { api } from "../../services/mock-api"
+import { api } from "../../src/firebase/real-api"
 import { User, Role } from '../../types';
 import Card from '../../components/ui/Card';
-import Modal from '../../components/ui/Modal';
+// import { Modal } from '../../components/ui/Modal';
 import { SaveIcon } from '../../components/ui/Icons';
 import Pagination from '../../components/ui/Pagination';
 import ToggleSwitch from '../../components/ui/ToggleSwitch';
+
+// Простой Modal компонент
+const SimpleModal: React.FC<{
+    isOpen: boolean;
+    onClose: () => void;
+    title: string;
+    children: React.ReactNode;
+}> = ({ isOpen, onClose, title, children }) => {
+    if (!isOpen) return null;
+
+    return (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
+                <div className="flex items-center justify-between p-6 border-b border-gray-200">
+                    <h3 className="text-lg font-semibold">{title}</h3>
+                    <button
+                        onClick={onClose}
+                        className="text-gray-400 hover:text-gray-600"
+                    >
+                        ✕
+                    </button>
+                </div>
+                <div className="p-6">
+                    {children}
+                </div>
+            </div>
+        </div>
+    );
+};
 
 const ITEMS_PER_PAGE = 5;
 
@@ -63,7 +92,11 @@ const UserFormModal: React.FC<UserFormModalProps> = ({ user, onClose, onSave }) 
     };
 
     return (
-        <Modal title={user ? 'Редактировать пользователя' : 'Добавить пользователя'} onClose={onClose} isOpen={true}>
+        <SimpleModal
+            isOpen={true}
+            onClose={onClose}
+            title={user ? 'Редактировать пользователя' : 'Добавить пользователя'}
+        >
             <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
                     <label htmlFor="name" className="block text-sm font-medium text-slate-700">ФИО</label>
@@ -120,7 +153,7 @@ const UserFormModal: React.FC<UserFormModalProps> = ({ user, onClose, onSave }) 
                     </button>
                 </div>
             </form>
-        </Modal>
+        </SimpleModal>
     );
 };
 

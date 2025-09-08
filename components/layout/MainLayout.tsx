@@ -2,178 +2,133 @@ import React, { useContext } from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
 import { AuthContext } from '../../context/AuthContext';
 import { Role } from '../../types';
-import { 
-    HomeIcon, 
-    UsersIcon, 
-    SlidersIcon, 
-    HistoryIcon, 
-    DataExchangeIcon, 
-    MegaphoneIcon, 
-    SettingsIcon, 
-    LogOutIcon, 
-    WaterIcon,
-    FileTextIcon,
-    WrenchIcon,
-    MapPinIcon,
-    ActivityIcon,
-    ToolIcon,
-    FileSpreadsheetIcon,
-    CalendarCheckIcon,
-    ReceiptIcon,
-    DollarSignIcon,
-    TrendingUpIcon,
-    TrendingDownIcon,
-    CreditCardIcon,
-    CalculatorIcon,
-    DocumentTextIcon,
-    ChatBubbleLeftRightIcon,
-    ChartBarIcon,
-    ClockIcon,
-    ExclamationTriangleIcon,
-    UploadIcon,
-    CalendarIcon,
-    BellIcon
-} from '../ui/Icons';
-import AnnouncementBanner from './AnnouncementBanner';
-import NotificationCenter from '../NotificationCenter';
 
 interface NavItem {
-    path: string;
-    label: string;
-    icon: React.ReactNode;
-    roles: Role[];
+  name: string;
+  to: string;
+  icon: React.ReactNode;
+  roles: Role[];
 }
 
-const navItems: NavItem[] = [
-    // Admin
-    { path: '/admin/dashboard', label: 'Панель управления', icon: <HomeIcon className="w-5 h-5" />, roles: [Role.Admin] },
-    { path: '/admin/users', label: 'Пользователи', icon: <UsersIcon className="w-5 h-5" />, roles: [Role.Admin] },
-    { path: '/admin/tariffs', label: 'Тарифы', icon: <SlidersIcon className="w-5 h-5" />, roles: [Role.Admin] },
-    { path: '/admin/data-exchange', label: 'Импорт/Экспорт', icon: <DataExchangeIcon className="w-5 h-5" />, roles: [Role.Admin] },
-    { path: '/admin/announcements', label: 'Объявления', icon: <MegaphoneIcon className="w-5 h-5" />, roles: [Role.Admin] },
-    { path: '/admin/logs', label: 'Аудит', icon: <HistoryIcon className="w-5 h-5" />, roles: [Role.Admin] },
-    { path: '/admin/settings', label: 'Настройки', icon: <SettingsIcon className="w-5 h-5" />, roles: [Role.Admin] },
-    
-    // Engineer & Controller
-    { path: '/engineer/dashboard', label: 'Обзор', icon: <HomeIcon className="w-5 h-5" />, roles: [Role.Engineer, Role.Controller] },
-    { path: '/engineer/abonents', label: 'Абоненты', icon: <UsersIcon className="w-5 h-5" />, roles: [Role.Engineer, Role.Controller] },
-    { path: '/engineer/requests', label: 'Заявки', icon: <WrenchIcon className="w-5 h-5" />, roles: [Role.Engineer, Role.Controller] },
-    { path: '/engineer/maintenance', label: 'Обслуживание', icon: <CalendarCheckIcon className="w-5 h-5" />, roles: [Role.Engineer, Role.Controller] },
-    { path: '/engineer/readings', label: 'Показания', icon: <ActivityIcon className="w-5 h-5" />, roles: [Role.Engineer, Role.Controller] },
-    { path: '/engineer/inventory', label: 'Склад', icon: <ToolIcon className="w-5 h-5" />, roles: [Role.Engineer, Role.Controller] },
-    { path: '/engineer/accruals', label: 'Начисления', icon: <FileTextIcon className="w-5 h-5" />, roles: [Role.Engineer, Role.Controller] },
-    { path: '/engineer/infrastructure', label: 'Зоны', icon: <MapPinIcon className="w-5 h-5" />, roles: [Role.Engineer, Role.Controller] },
-    { path: '/engineer/reports', label: 'Отчеты', icon: <FileSpreadsheetIcon className="w-5 h-5" />, roles: [Role.Engineer, Role.Controller] },
-    { path: '/engineer/check-closing', label: 'Закрытие чека', icon: <ReceiptIcon className="w-5 h-5" />, roles: [Role.Engineer, Role.Controller] },
-    { path: '/engineer/bulk-readings', label: 'Массовый импорт', icon: <UploadIcon className="w-5 h-5" />, roles: [Role.Engineer] },
-    { path: '/engineer/work-scheduler', label: 'Планировщик работ', icon: <CalendarIcon className="w-5 h-5" />, roles: [Role.Engineer] },
-    { path: '/engineer/auto-warehouse', label: 'Авто-склад', icon: <ExclamationTriangleIcon className="w-5 h-5" />, roles: [Role.Engineer] },
-    { path: '/engineer/water-quality', label: 'Качество воды', icon: <ChartBarIcon className="w-5 h-5" />, roles: [Role.Engineer] },
-    
-    // Accountant
-    { path: '/accountant/dashboard', label: 'Обзор', icon: <HomeIcon className="w-5 h-5" />, roles: [Role.Accountant] },
-    { path: '/accountant/payments', label: 'Платежи', icon: <DollarSignIcon className="w-5 h-5" />, roles: [Role.Accountant] },
-    { path: '/accountant/expenses', label: 'Расходы', icon: <TrendingDownIcon className="w-5 h-5" />, roles: [Role.Accountant] },
-    { path: '/accountant/salaries', label: 'Зарплаты', icon: <UsersIcon className="w-5 h-5" />, roles: [Role.Accountant] },
-    { path: '/accountant/budget', label: 'Финансовые планы', icon: <ChartBarIcon className="w-5 h-5" />, roles: [Role.Accountant] },
-    { path: '/accountant/reports', label: 'Отчеты', icon: <FileSpreadsheetIcon className="w-5 h-5" />, roles: [Role.Accountant] },
-    { path: '/accountant/bank-operations', label: 'Банковские операции', icon: <CreditCardIcon className="w-5 h-5" />, roles: [Role.Accountant] },
-    { path: '/accountant/debtors', label: 'Должники', icon: <ExclamationTriangleIcon className="w-5 h-5" />, roles: [Role.Accountant] },
-    { path: '/accountant/manual-charges', label: 'Ручные начисления', icon: <CalculatorIcon className="w-5 h-5" />, roles: [Role.Accountant] },
-    { path: '/accountant/documents', label: 'Документы', icon: <DocumentTextIcon className="w-5 h-5" />, roles: [Role.Accountant] },
-    { path: '/accountant/appeals', label: 'Обращения', icon: <ChatBubbleLeftRightIcon className="w-5 h-5" />, roles: [Role.Accountant] },
-    { path: '/accountant/action-logs', label: 'Журнал действий', icon: <ClockIcon className="w-5 h-5" />, roles: [Role.Accountant] },
-    { path: '/accountant/check-closing', label: 'Закрытие чека', icon: <ReceiptIcon className="w-5 h-5" />, roles: [Role.Accountant] },
-    { path: '/accountant/auto-penalty', label: 'Авто-пени', icon: <CalculatorIcon className="w-5 h-5" />, roles: [Role.Accountant] },
-    { path: '/accountant/debt-restructuring', label: 'Реструктуризация', icon: <CalendarIcon className="w-5 h-5" />, roles: [Role.Accountant] },
-    { path: '/accountant/tax-reports', label: 'Налоговые отчеты', icon: <FileTextIcon className="w-5 h-5" />, roles: [Role.Accountant] },
-    { path: '/accountant/notifications', label: 'Уведомления', icon: <BellIcon className="w-5 h-5" />, roles: [Role.Accountant] },
-    { path: '/accountant/budget-planning', label: 'Бюджетное планирование', icon: <CalculatorIcon className="w-5 h-5" />, roles: [Role.Accountant] },
-    { path: '/accountant/profitability', label: 'Анализ рентабельности', icon: <TrendingUpIcon className="w-5 h-5" />, roles: [Role.Accountant] },
-    { path: '/accountant/accounts-payable', label: 'Кредиторская задолженность', icon: <DollarSignIcon className="w-5 h-5" />, roles: [Role.Accountant] },
-];
-
-const Sidebar: React.FC = () => {
-    const auth = useContext(AuthContext);
-    const userRole = auth?.user?.role;
-    
-    const filteredNavItems = navItems.filter(item => userRole && item.roles.includes(userRole));
-
-    return (
-        <aside className="w-64 bg-white border-r border-slate-200 flex flex-col">
-            <div className="h-16 flex items-center justify-center border-b border-slate-200 gap-2">
-                <WaterIcon className="w-8 h-8" />
-                <h1 className="text-2xl font-extrabold tracking-tight text-slate-800">GIS-KG</h1>
-            </div>
-            <nav className="flex-1 p-4 space-y-2">
-                {filteredNavItems.map(item => (
-                    <NavLink
-                        key={item.path}
-                        to={item.path}
-                        className={({ isActive }) =>
-                            `flex items-center px-4 py-2.5 rounded-lg text-sm transition-colors ${
-                                isActive
-                                    ? 'bg-blue-50 text-blue-600 font-semibold'
-                                    : 'text-slate-600 hover:bg-slate-100'
-                            }`
-                        }
-                    >
-                        {item.icon}
-                        <span className="ml-3">{item.label}</span>
-                    </NavLink>
-                ))}
-            </nav>
-            <div className="p-4 border-t border-slate-200">
-                <button
-                    onClick={auth?.logout}
-                    className="flex w-full items-center px-4 py-2.5 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-100"
-                >
-                    <LogOutIcon className="w-5 h-5" />
-                    <span className="ml-3">Выйти</span>
-                </button>
-            </div>
-        </aside>
-    );
-};
-
-const Header: React.FC = () => {
-    const auth = useContext(AuthContext);
-    
-    return (
-        <header className="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-6">
-            <div>
-                 {/* Can add breadcrumbs or page title here */}
-            </div>
-            <div className="flex items-center space-x-4">
-                <NotificationCenter />
-                <div className="flex items-center">
-                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 text-white flex items-center justify-center font-bold shadow-inner">
-                        {auth?.user?.name.charAt(0)}
-                    </div>
-                    <div className="ml-3 text-left">
-                        <p className="text-sm font-semibold text-slate-800">{auth?.user?.name}</p>
-                        <p className="text-xs text-slate-500 capitalize">{auth?.user?.role}</p>
-                    </div>
-                </div>
-            </div>
-        </header>
-    );
-};
-
-
 const MainLayout: React.FC = () => {
-    return (
-        <div className="flex h-screen bg-slate-100">
-            <Sidebar />
-            <div className="flex-1 flex flex-col overflow-hidden">
-                <AnnouncementBanner />
-                <Header />
-                <main className="flex-1 overflow-x-hidden overflow-y-auto p-6 lg:p-8">
-                    <Outlet />
-                </main>
-            </div>
+  const auth = useContext(AuthContext);
+  const userRole = auth?.user?.role;
+
+  const adminNavigation: NavItem[] = [
+    { name: 'Обзор', to: '/admin/dashboard', icon: '🏠', roles: [Role.Admin] },
+    { name: 'Пользователи', to: '/admin/users', icon: '👥', roles: [Role.Admin] },
+    { name: 'Объявления', to: '/admin/announcements', icon: '📢', roles: [Role.Admin] },
+    { name: 'Аудит', to: '/admin/logs', icon: '📋', roles: [Role.Admin] },
+    { name: 'Календарь', to: '/admin/calendar', icon: '📅', roles: [Role.Admin] },
+    { name: 'Настройки', to: '/admin/settings', icon: '⚙️', roles: [Role.Admin] },
+    { name: 'Импорт/Экспорт', to: '/admin/data-exchange', icon: '📊', roles: [Role.Admin] },
+    { name: 'Тарифы', to: '/admin/tariffs', icon: '💰', roles: [Role.Admin] }
+  ];
+
+  const engineerNavigation: NavItem[] = [
+    { name: 'Обзор', to: '/engineer/dashboard', icon: '🏠', roles: [Role.Engineer, Role.Controller] },
+    { name: 'Абоненты', to: '/engineer/abonents', icon: '👥', roles: [Role.Engineer, Role.Controller] },
+    { name: 'Заявки', to: '/engineer/requests', icon: '📋', roles: [Role.Engineer, Role.Controller] },
+    { name: 'Показания', to: '/engineer/readings', icon: '📊', roles: [Role.Engineer, Role.Controller] },
+    { name: 'Обслуживание', to: '/engineer/maintenance', icon: '🔧', roles: [Role.Engineer, Role.Controller] },
+    { name: 'Склад', to: '/engineer/inventory', icon: '📦', roles: [Role.Engineer, Role.Controller] },
+    { name: 'Начисления', to: '/engineer/accruals', icon: '💰', roles: [Role.Engineer, Role.Controller] },
+    { name: 'Зоны', to: '/engineer/infrastructure', icon: '🗺️', roles: [Role.Engineer, Role.Controller] },
+    { name: 'Отчеты', to: '/engineer/reports', icon: '📈', roles: [Role.Engineer, Role.Controller] },
+    { name: 'Закрытие чека', to: '/engineer/check-closing', icon: '✅', roles: [Role.Engineer, Role.Controller] },
+    { name: 'Массовый импорт', to: '/engineer/bulk-readings', icon: '📥', roles: [Role.Engineer, Role.Controller] },
+    { name: 'Планировщик работ', to: '/engineer/work-scheduler', icon: '📅', roles: [Role.Engineer, Role.Controller] },
+    { name: 'Календарь', to: '/engineer/calendar', icon: '📆', roles: [Role.Engineer, Role.Controller] },
+    { name: 'Авто-склад', to: '/engineer/auto-warehouse', icon: '🚗', roles: [Role.Engineer, Role.Controller] },
+    { name: 'Качество воды', to: '/engineer/water-quality', icon: '💧', roles: [Role.Engineer, Role.Controller] }
+  ];
+
+  const accountantNavigation: NavItem[] = [
+    { name: 'Обзор', to: '/accountant/dashboard', icon: '🏠', roles: [Role.Accountant] },
+    { name: 'Платежи', to: '/accountant/payments', icon: '💰', roles: [Role.Accountant] },
+    { name: 'Расходы', to: '/accountant/expenses', icon: '📊', roles: [Role.Accountant] },
+    { name: 'Зарплаты', to: '/accountant/salaries', icon: '👷', roles: [Role.Accountant] },
+    { name: 'Банковские операции', to: '/accountant/bank-operations', icon: '🏦', roles: [Role.Accountant] },
+    { name: 'Отчеты', to: '/accountant/reports', icon: '📈', roles: [Role.Accountant] },
+    { name: 'Закрытие чеков', to: '/accountant/check-closing', icon: '✅', roles: [Role.Accountant] },
+    { name: 'Ручные начисления', to: '/accountant/manual-charges', icon: '✏️', roles: [Role.Accountant] },
+    { name: 'Документы', to: '/accountant/documents', icon: '📄', roles: [Role.Accountant] },
+    { name: 'Обращения', to: '/accountant/appeals', icon: '📝', roles: [Role.Accountant] },
+    { name: 'Журнал действий', to: '/accountant/action-logs', icon: '📋', roles: [Role.Accountant] },
+    { name: 'Авто-пеня', to: '/accountant/auto-penalty', icon: '⚠️', roles: [Role.Accountant] },
+    { name: 'Реструктуризация долгов', to: '/accountant/debt-restructuring', icon: '🔄', roles: [Role.Accountant] },
+    { name: 'Налоговые отчеты', to: '/accountant/tax-reports', icon: '🧾', roles: [Role.Accountant] },
+    { name: 'Уведомления', to: '/accountant/notifications', icon: '🔔', roles: [Role.Accountant] },
+    { name: 'Бюджетное планирование', to: '/accountant/budget-planning', icon: '📊', roles: [Role.Accountant] },
+    { name: 'Анализ прибыльности', to: '/accountant/profitability', icon: '📈', roles: [Role.Accountant] },
+    { name: 'Кредиторская задолженность', to: '/accountant/accounts-payable', icon: '💳', roles: [Role.Accountant] },
+    { name: 'Должники', to: '/accountant/debtors', icon: '👥', roles: [Role.Accountant] },
+    { name: 'Бюджет', to: '/accountant/budget', icon: '💼', roles: [Role.Accountant] }
+  ];
+
+  let navigation: NavItem[] = [];
+  let title = '';
+
+  if (userRole === Role.Admin) {
+    navigation = adminNavigation;
+    title = 'Админ панель';
+  } else if (userRole === Role.Engineer || userRole === Role.Controller) {
+    navigation = engineerNavigation;
+    title = 'Инженерная панель';
+  } else if (userRole === Role.Accountant) {
+    navigation = accountantNavigation;
+    title = 'Бухгалтерская панель';
+  }
+
+  const filteredNavigation = navigation.filter(item => 
+    item.roles.includes(userRole as Role)
+  );
+
+  return (
+    <div className="min-h-screen bg-gray-100">
+      <div className="flex">
+        {/* Sidebar */}
+        <div className="w-64 bg-white shadow-lg">
+          <div className="p-6">
+            <h1 className="text-2xl font-bold text-gray-800">{title}</h1>
+          </div>
+          <nav className="mt-6">
+            {filteredNavigation.map((item) => (
+              <NavLink
+                key={item.name}
+                to={item.to}
+                className={({ isActive }) =>
+                  `flex items-center px-6 py-3 text-gray-700 hover:bg-gray-100 ${
+                    isActive ? 'bg-blue-50 text-blue-700 border-r-2 border-blue-700' : ''
+                  }`
+                }
+              >
+                <span className="mr-3">{item.icon}</span>
+                {item.name}
+              </NavLink>
+            ))}
+          </nav>
+          
+          {/* Logout button */}
+          <div className="mt-auto p-6">
+            <button 
+              onClick={() => auth?.logout?.()}
+              className="w-full px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700"
+            >
+              Выйти
+            </button>
+          </div>
         </div>
-    );
+
+        {/* Main content */}
+        <div className="flex-1">
+          <main className="p-8">
+            <Outlet />
+          </main>
+        </div>
+      </div>
+    </div>
+  );
 };
 
 export default MainLayout;

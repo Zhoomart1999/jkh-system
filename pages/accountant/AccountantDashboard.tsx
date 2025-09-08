@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useContext } from 'react';
-import { api } from "../../services/mock-api"
+import { api } from "../../src/firebase/real-api"
 import { AccountantDashboardData, Role, User, Payment, PaymentMethod, Expense, ExpenseCategory, StaffSalary, FuelLog, FinancialPlan, BankStatementTransaction, ReconciliationStatus, DebtCase, DebtStatus } from '../../types';
 import Card from '../../components/ui/Card';
 import { AuthContext } from '../../context/AuthContext';
+import CheckClosingTab from './tabs/CheckClosingTab';
 import { 
     DollarSignIcon, 
     TrendingUpIcon, 
@@ -22,7 +23,8 @@ import {
     DownloadIcon,
     UploadIcon,
     CheckIcon,
-    BellIcon
+    BellIcon,
+    ClipboardDocumentIcon
 } from '../../components/ui/Icons';
 
 const AccountantDashboard: React.FC = () => {
@@ -62,6 +64,7 @@ const AccountantDashboard: React.FC = () => {
         { id: 'documents', name: 'Документы', icon: DocumentTextIcon },
         { id: 'appeals', name: 'Обращения', icon: ChatBubbleLeftRightIcon },
         { id: 'action-logs', name: 'Журнал действий', icon: ClockIcon },
+        { id: 'check-closing', name: 'Закрытие чеков', icon: ClipboardDocumentIcon },
     ];
 
     const renderTabContent = () => {
@@ -92,6 +95,8 @@ const AccountantDashboard: React.FC = () => {
                 return <AppealsTab />;
             case 'action-logs':
                 return <ActionLogsTab />;
+            case 'check-closing':
+                return <CheckClosingTab />;
             default:
                 return <OverviewTab data={data} />;
         }

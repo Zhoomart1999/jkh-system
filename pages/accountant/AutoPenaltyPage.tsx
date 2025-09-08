@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { api } from "../../services/mock-api"
-import { Abonent, PaymentMethod } from '../../types';
+import { api } from "../../src/firebase/real-api";
+import { Abonent } from '../../types';
 import Card from '../../components/ui/Card';
 import { CalculatorIcon, ExclamationTriangleIcon, CheckIcon, ClockIcon } from '../../components/ui/Icons';
+import { useNotifications } from '../../context/NotificationContext';
 
 interface PenaltyCalculation {
     abonentId: string;
@@ -16,11 +17,12 @@ interface PenaltyCalculation {
 }
 
 const AutoPenaltyPage: React.FC = () => {
+    const { showNotification } = useNotifications();
     const [abonents, setAbonents] = useState<Abonent[]>([]);
-    const [calculations, setCalculations] = useState<PenaltyCalculation[]>([]);
     const [loading, setLoading] = useState(true);
-    const [processing, setProcessing] = useState(false);
-    const [penaltyRate, setPenaltyRate] = useState(0.5); // 0.5% в день
+    const [penaltyRate, setPenaltyRate] = useState(0.1);
+    const [calculations, setCalculations] = useState<PenaltyCalculation[]>([]);
+    const [isCalculating, setIsCalculating] = useState(false);
     const [minDebtForPenalty, setMinDebtForPenalty] = useState(100); // Минимальный долг для начисления пени
     const [gracePeriod, setGracePeriod] = useState(10); // Льготный период в днях
 
@@ -73,33 +75,49 @@ const AutoPenaltyPage: React.FC = () => {
     const applyPenalties = async () => {
         if (!confirm(`Применить пени к ${calculations.length} абонентам?`)) return;
         
-        setProcessing(true);
+        setIsCalculating(true);
         try {
             // Имитация применения пеней
             await new Promise(resolve => setTimeout(resolve, 2000));
             
             // Здесь был бы реальный API вызов
-            alert(`Пени успешно применены к ${calculations.length} абонентам`);
+            showNotification({
+                type: 'success',
+                title: 'Пени применены',
+                message: `Пени успешно применены к ${calculations.length} абонентам`
+            });
             setCalculations([]);
         } catch (error) {
-            alert('Ошибка при применении пеней');
+            showNotification({
+                type: 'error',
+                title: 'Ошибка применения',
+                message: 'Ошибка при применении пеней'
+            });
         } finally {
-            setProcessing(false);
+            setIsCalculating(false);
         }
     };
 
     const sendNotifications = async () => {
         if (!confirm(`Отправить уведомления о пени ${calculations.length} абонентам?`)) return;
         
-        setProcessing(true);
+        setIsCalculating(true);
         try {
             // Имитация отправки уведомлений
             await new Promise(resolve => setTimeout(resolve, 1500));
-            alert(`Уведомления отправлены ${calculations.length} абонентам`);
+            showNotification({
+                type: 'success',
+                title: 'Уведомления отправлены',
+                message: `Уведомления отправлены ${calculations.length} абонентам`
+            });
         } catch (error) {
-            alert('Ошибка при отправке уведомлений');
+            showNotification({
+                type: 'error',
+                title: 'Ошибка отправки',
+                message: 'Ошибка при отправке уведомлений'
+            });
         } finally {
-            setProcessing(false);
+            setIsCalculating(false);
         }
     };
 
@@ -189,18 +207,18 @@ const AutoPenaltyPage: React.FC = () => {
                         <div className="flex gap-3">
                             <button
                                 onClick={sendNotifications}
-                                disabled={processing}
+                                disabled={isCalculating}
                                 className="bg-yellow-600 text-white font-semibold px-4 py-2 rounded-lg hover:bg-yellow-700 transition-colors disabled:bg-yellow-300"
                             >
                                 Отправить уведомления
                             </button>
                             <button
                                 onClick={applyPenalties}
-                                disabled={processing}
+                                disabled={isCalculating}
                                 className="bg-red-600 text-white font-semibold px-4 py-2 rounded-lg hover:bg-red-700 transition-colors disabled:bg-red-300 flex items-center gap-2"
                             >
                                 <CheckIcon className="w-4 h-4" />
-                                {processing ? 'Применение...' : 'Применить пени'}
+                                {isCalculating ? 'Применение...' : 'Применить пени'}
                             </button>
                         </div>
                     </div>

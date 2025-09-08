@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { api } from "../../services/mock-api"
-import { Abonent, Notification, NotificationType } from '../../types';
+import { api } from "../../src/firebase/real-api";
+import { Abonent } from '../../types';
 import Card from '../../components/ui/Card';
-import { BellIcon, ChatBubbleLeftRightIcon, CheckIcon, ClockIcon, ExclamationTriangleIcon } from '../../components/ui/Icons';
+import { PlusIcon, TrashIcon, EditIcon, CheckIcon, ClockIcon, MegaphoneIcon } from '../../components/ui/Icons';
+import { useNotifications } from '../../context/NotificationContext';
 
 interface NotificationTemplate {
     id: string;
@@ -25,6 +26,7 @@ interface NotificationCampaign {
 }
 
 const NotificationsPage: React.FC = () => {
+    const { showNotification } = useNotifications();
     const [abonents, setAbonents] = useState<Abonent[]>([]);
     const [notifications, setNotifications] = useState<Notification[]>([]);
     const [templates, setTemplates] = useState<NotificationTemplate[]>([]);
@@ -112,9 +114,17 @@ const NotificationsPage: React.FC = () => {
                 templateId: ''
             });
 
-            alert(`Кампания завершена! Отправлено ${targetAbonents.length} уведомлений`);
+            showNotification({
+                type: 'success',
+                title: 'Кампания завершена',
+                message: `Кампания завершена! Отправлено ${targetAbonents.length} уведомлений`
+            });
         } catch (error) {
-            alert('Ошибка при создании кампании');
+            showNotification({
+                type: 'error',
+                title: 'Ошибка создания',
+                message: 'Ошибка при создании кампании'
+            });
         } finally {
             setSending(false);
         }
@@ -124,9 +134,17 @@ const NotificationsPage: React.FC = () => {
         try {
             // Имитация отправки тестового уведомления
             await new Promise(resolve => setTimeout(resolve, 1000));
-            alert('Тестовое уведомление отправлено!');
+            showNotification({
+                type: 'success',
+                title: 'Тест отправлен',
+                message: 'Тестовое уведомление отправлено!'
+            });
         } catch (error) {
-            alert('Ошибка при отправке тестового уведомления');
+            showNotification({
+                type: 'error',
+                title: 'Ошибка отправки',
+                message: 'Ошибка при отправке тестового уведомления'
+            });
         }
     };
 

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { api } from "../../services/mock-api"
+import { api } from "../../src/firebase/real-api"
 import Card from '../../components/ui/Card';
 import { TrendingUpIcon, TrendingDownIcon, CalculatorIcon, DollarSignIcon, ChartBarIcon } from '../../components/ui/Icons';
 

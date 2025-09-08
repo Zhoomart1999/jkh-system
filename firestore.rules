@@ -1,9 +1,235 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Временно разрешаем доступ ко всем данным для тестирования
-    match /{document=**} {
-      allow read, write: if true;
+    // Функция для проверки аутентификации через PIN
+    function isAuthenticated() {
+      return true; // Разрешаем доступ для PIN-аутентификации
+    }
+    
+    // Функция для проверки роли пользователя
+    function hasRole(role) {
+      return true; // Временно разрешаем все роли для PIN-аутентификации
+    }
+    
+    // Функция для проверки ролей
+    function hasAnyRole(roles) {
+      return true; // Временно разрешаем все роли для PIN-аутентификации
+    }
+    
+    // Функция для проверки владельца документа
+    function isOwner(userId) {
+      return true; // Временно разрешаем доступ для PIN-аутентификации
+    }
+    
+    // Функция для валидации данных абонента
+    function isValidAbonent() {
+      let data = request.resource.data;
+      return data.keys().hasAll(['fullName', 'address', 'phone', 'numberOfPeople']) &&
+             data.fullName is string && data.fullName.size() > 0 &&
+             data.address is string && data.address.size() > 0 &&
+             data.phone is string && data.phone.size() > 0 &&
+             data.numberOfPeople is number && data.numberOfPeople > 0;
+    }
+    
+    // Функция для валидации платежа
+    function isValidPayment() {
+      let data = request.resource.data;
+      return data.keys().hasAll(['abonentId', 'amount', 'date']) &&
+             data.abonentId is string && data.abonentId.size() > 0 &&
+             data.amount is number && data.amount > 0 &&
+             data.date is string && data.date.size() > 0;
+    }
+
+    // Пользователи - все могут читать для входа, админы могут изменять
+    match /users/{userId} {
+      allow read: if true; // Разрешаем чтение для входа по PIN
+      allow create, update, delete: if true; // Временно разрешаем всем
+    }
+    
+    // Абоненты - все авторизованные могут читать, инженеры и админы могут изменять
+    match /abonents/{abonentId} {
+      allow read: if true; // Разрешаем чтение всем
+      allow create, update: if true; // Временно разрешаем всем
+      allow delete: if true; // Временно разрешаем всем
+    }
+    
+    // Платежи - все авторизованные могут читать, бухгалтеры и админы могут изменять
+    match /payments/{paymentId} {
+      allow read: if true; // Разрешаем чтение всем
+      allow create, update: if true; // Временно разрешаем всем
+      allow delete: if true; // Временно разрешаем всем
+    }
+    
+    // Тарифы - все могут читать, только админы могут изменять
+    match /tariffs/{tariffId} {
+      allow read: if true; // Разрешаем чтение для всех
+      allow create, update, delete: if true; // Временно разрешаем всем
+    }
+    
+    // Уведомления - все авторизованные могут читать и создавать
+    match /notifications/{notificationId} {
+      allow read, create: if true; // Разрешаем всем
+      allow update, delete: if true; // Временно разрешаем всем
+    }
+    
+    // Аудит - все могут читать, система может создавать
+    match /auditLogs/{logId} {
+      allow read: if true; // Разрешаем всем
+      allow create: if true; // Разрешаем всем
+      allow update, delete: if true; // Временно разрешаем всем
+    }
+    
+    // Action Logs - все могут читать, система может создавать
+    match /actionLogs/{logId} {
+      allow read: if true; // Разрешаем всем
+      allow create: if true; // Разрешаем всем
+      allow update, delete: if true; // Временно разрешаем всем
+    }
+    
+    // Технические заявки - инженеры и админы могут управлять
+    match /technicalRequests/{requestId} {
+      allow read: if true; // Разрешаем всем
+      allow create, update: if true; // Временно разрешаем всем
+      allow delete: if true; // Временно разрешаем всем
+    }
+    
+    // Расходы - бухгалтеры и админы могут управлять
+    match /expenses/{expenseId} {
+      allow read: if true; // Разрешаем всем
+      allow create, update, delete: if true; // Временно разрешаем всем
+    }
+    
+    // Зарплаты сотрудников - бухгалтеры и админы могут управлять
+    match /staffSalaries/{salaryId} {
+      allow read: if true; // Разрешаем всем
+      allow create, update, delete: if true; // Временно разрешаем всем
+    }
+    
+    // Банковские операции - бухгалтеры и админы могут управлять
+    match /bankTransactions/{transactionId} {
+      allow read: if true; // Разрешаем всем
+      allow create, update, delete: if true; // Временно разрешаем всем
+    }
+    
+    // Финансовые планы - бухгалтеры и админы могут управлять
+    match /financialPlans/{planId} {
+      allow read: if true; // Разрешаем всем
+      allow create, update, delete: if true; // Временно разрешаем всем
+    }
+    
+    // Планы реструктуризации долгов - бухгалтеры и админы могут управлять
+    match /debtRestructuringPlans/{planId} {
+      allow read: if true; // Разрешаем всем
+      allow create, update, delete: if true; // Временно разрешаем всем
+    }
+    
+    // Шаблоны уведомлений - админы могут управлять
+    match /notificationTemplates/{templateId} {
+      allow read: if true; // Разрешаем всем
+      allow create, update, delete: if true; // Временно разрешаем всем
+    }
+    
+    // Задачи обслуживания - инженеры и админы могут управлять
+    match /maintenanceTasks/{taskId} {
+      allow read: if true; // Разрешаем всем
+      allow create, update, delete: if true; // Временно разрешаем всем
+    }
+    
+    // Данные качества воды - инженеры и админы могут управлять
+    match /waterQuality/{dataId} {
+      allow read: if true; // Разрешаем всем
+      allow create, update, delete: if true; // Временно разрешаем всем
+    }
+    
+    // Показания счетчиков - инженеры и админы могут управлять
+    match /readings/{readingId} {
+      allow read: if true; // Разрешаем всем
+      allow create, update, delete: if true; // Временно разрешаем всем
+    }
+    
+    // Начисления - инженеры и админы могут управлять
+    match /accruals/{accrualId} {
+      allow read: if true; // Разрешаем всем
+      allow create, update, delete: if true; // Временно разрешаем всем
+    }
+    
+    // Инвентарь - инженеры и админы могут управлять
+    match /inventory/{itemId} {
+      allow read: if true; // Разрешаем всем
+      allow create, update, delete: if true; // Временно разрешаем всем
+    }
+    
+    // Объявления - админы могут управлять
+    match /announcements/{announcementId} {
+      allow read: if true; // Разрешаем всем
+      allow create, update, delete: if true; // Временно разрешаем всем
+    }
+    
+    // Отчеты - все могут читать, админы могут управлять
+    match /reports/{reportId} {
+      allow read: if true; // Разрешаем всем
+      allow create, update, delete: if true; // Временно разрешаем всем
+    }
+    
+    // Документы - все могут читать, админы могут управлять
+    match /documents/{documentId} {
+      allow read: if true; // Разрешаем всем
+      allow create, update, delete: if true; // Временно разрешаем всем
+    }
+    
+    // Обращения - все могут читать и создавать
+    match /appeals/{appealId} {
+      allow read, create: if true; // Разрешаем всем
+      allow update, delete: if true; // Временно разрешаем всем
+    }
+    
+    // Данные карты - инженеры и админы могут управлять
+    match /mapData/{dataId} {
+      allow read: if true; // Разрешаем всем
+      allow create, update, delete: if true; // Временно разрешаем всем
+    }
+    
+    // Обмен данными - админы могут управлять
+    match /dataExchange/{exchangeId} {
+      allow read: if true; // Разрешаем всем
+      allow create, update, delete: if true; // Временно разрешаем всем
+    }
+    
+    // Профили - пользователи могут читать свои профили
+    match /profiles/{profileId} {
+      allow read: if true; // Разрешаем всем
+      allow create, update: if true; // Временно разрешаем всем
+      allow delete: if true; // Временно разрешаем всем
+    }
+    
+    // Инфраструктура - инженеры и админы могут управлять
+    match /infrastructure/{itemId} {
+      allow read: if true; // Разрешаем всем
+      allow create, update, delete: if true; // Временно разрешаем всем
+    }
+    
+    // Зарплаты - бухгалтеры и админы могут управлять
+    match /salaries/{salaryId} {
+      allow read: if true; // Разрешаем всем
+      allow create, update, delete: if true; // Временно разрешаем всем
+    }
+    
+    // Настройки компании - админы могут управлять
+    match /companySettings/{settingId} {
+      allow read: if true; // Разрешаем чтение для всех
+      allow create, update, delete: if true; // Временно разрешаем всем
+    }
+    
+    // QR коды - все могут читать, система может создавать
+    match /qrCodes/{qrId} {
+      allow read, create: if true; // Разрешаем всем
+      allow update, delete: if true; // Временно разрешаем всем
+    }
+    
+    // Закрытие чеков - бухгалтеры и админы могут управлять
+    match /checkClosings/{closingId} {
+      allow read: if true; // Разрешаем всем
+      allow create, update, delete: if true; // Временно разрешаем всем
     }
   }
 } 

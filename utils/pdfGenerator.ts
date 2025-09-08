@@ -127,6 +127,18 @@ export const downloadReceiptPDF = async (receiptDetails: ReceiptDetails): Promis
     URL.revokeObjectURL(url);
   } catch (error) {
     console.error('Ошибка при генерации PDF:', error);
-    alert('Ошибка при генерации квитанции');
+    // Без использования React-хука покажем нативный toast-подобный div
+    const note = document.createElement('div');
+    note.textContent = 'Ошибка при генерации квитанции';
+    note.style.position = 'fixed';
+    note.style.bottom = '20px';
+    note.style.right = '20px';
+    note.style.background = '#dc2626';
+    note.style.color = '#fff';
+    note.style.padding = '10px 14px';
+    note.style.borderRadius = '8px';
+    note.style.zIndex = '9999';
+    document.body.appendChild(note);
+    setTimeout(() => note.remove(), 3000);
   }
 }; 

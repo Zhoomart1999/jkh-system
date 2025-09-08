@@ -2,13 +2,16 @@
 import React, { useState, useEffect, useContext } from 'react';
 import Card from '../../../components/ui/Card';
 import StatCard from '../../../components/ui/StatCard';
-import { api } from "../../../services/mock-api"
+import { api } from "../../../src/firebase/real-api"
 import { UsersIcon, WrenchIcon, MapPinIcon, ActivityIcon } from '../../../components/ui/Icons';
 import { AuthContext } from '../../../context/AuthContext';
 import { Role, ControllerOverviewData, RequestTypeLabels } from '../../../types';
+import { DashboardCharts } from '../../../components/charts';
+import { useNotifications } from '../../../context/NotificationContext';
 
 const OverviewTab: React.FC = () => {
     const auth = useContext(AuthContext);
+    const { showNotification } = useNotifications();
     const [data, setData] = useState<ControllerOverviewData | null>(null);
     const [loading, setLoading] = useState(true);
 
@@ -22,19 +25,29 @@ const OverviewTab: React.FC = () => {
                 if (isController && auth?.user?.id) {
                     overviewData = await api.getControllerOverviewData(auth.user.id);
                 } else {
-                    const stats = await api.getEngineerDashboardData();
-                    overviewData = { stats, myAbonents: [], myRequests: [] };
+                    // Получаем данные для инженера
+                    const engineerData = await api.getEngineerDashboardData();
+                    overviewData = { 
+                        stats: {
+                            totalAbonents: engineerData.totalAbonents,
+                            activeAbonents: engineerData.activeAbonents,
+                            disconnectedAbonents: engineerData.disconnectedAbonents,
+                            pendingRequests: engineerData.pendingRequests
+                        }, 
+                        myAbonents: [], 
+                        myRequests: engineerData.recentRequests || [] 
+                    };
                 }
                 setData(overviewData);
             } catch (error) {
-                console.error("Failed to fetch dashboard data:", error);
+                showNotification('error', 'Ошибка загрузки', 'Не удалось загрузить данные дашборда');
             } finally {
                 setLoading(false);
             }
         };
 
         fetchData();
-    }, [isController, auth?.user?.id]);
+    }, [isController, auth?.user?.id, showNotification]);
 
     if (loading || !data) {
         return <Card><p>Загрузка статистики...</p></Card>;
@@ -95,6 +108,12 @@ const OverviewTab: React.FC = () => {
                     </Card>
                 </div>
             )}
+            
+            {/* Графики и аналитика */}
+            <div className="mt-8">
+                <h2 className="text-2xl font-bold text-slate-900 mb-6">📊 Аналитика и графики</h2>
+                <DashboardCharts />
+            </div>
         </div>
     );
 };

@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { api } from "../../services/mock-api"
+import { api } from "../../src/firebase/real-api"
 import { Abonent, DebtRestructuring } from '../../types';
 import Card from '../../components/ui/Card';
 import { CalculatorIcon, CalendarIcon, DollarSignIcon, CheckIcon, ClockIcon, ExclamationTriangleIcon } from '../../components/ui/Icons';
+import { useNotifications } from '../../context/NotificationContext';
 
 interface RestructuringPlan {
     id: string;
@@ -20,6 +21,7 @@ interface RestructuringPlan {
 }
 
 const DebtRestructuringPage: React.FC = () => {
+    const { showNotification } = useNotifications();
     const [abonents, setAbonents] = useState<Abonent[]>([]);
     const [plans, setPlans] = useState<RestructuringPlan[]>([]);
     const [loading, setLoading] = useState(true);
@@ -89,9 +91,17 @@ const DebtRestructuringPage: React.FC = () => {
             setSelectedAbonent(null);
             setFormData({ monthlyPayment: 0, months: 12, discount: 0 });
             
-            alert('План реструктуризации создан успешно!');
+            showNotification({
+                type: 'success',
+                title: 'План создан',
+                message: 'План реструктуризации создан успешно!'
+            });
         } catch (error) {
-            alert('Ошибка при создании плана');
+            showNotification({
+                type: 'error',
+                title: 'Ошибка создания',
+                message: 'Ошибка при создании плана'
+            });
         } finally {
             setProcessing(false);
         }
@@ -115,9 +125,17 @@ const DebtRestructuringPage: React.FC = () => {
             };
 
             setPlans(plans.map(p => p.id === planId ? updatedPlan : p));
-            alert('Платеж зарегистрирован!');
+            showNotification({
+                type: 'success',
+                title: 'Платеж зарегистрирован',
+                message: 'Платеж зарегистрирован!'
+            });
         } catch (error) {
-            alert('Ошибка при регистрации платежа');
+            showNotification({
+                type: 'error',
+                title: 'Ошибка регистрации',
+                message: 'Ошибка при регистрации платежа'
+            });
         } finally {
             setProcessing(false);
         }

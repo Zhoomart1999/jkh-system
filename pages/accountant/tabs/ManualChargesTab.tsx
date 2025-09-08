@@ -1,12 +1,14 @@
 import React, { useState, useEffect, useContext } from 'react';
-import { api } from "../../../services/mock-api"
+import { api } from "../../../src/firebase/real-api"
 import { ManualCharge, ManualChargeType, Abonent, User } from '../../../types';
 import Card from '../../../components/ui/Card';
 import Modal from '../../../components/ui/Modal';
 import { PlusIcon, EyeIcon, TrashIcon } from '../../../components/ui/Icons';
 import { AuthContext } from '../../../context/AuthContext';
+import { useNotifications } from '../../../context/NotificationContext';
 
 const ManualChargesTab: React.FC = () => {
+    const { showNotification } = useNotifications();
     const [charges, setCharges] = useState<ManualCharge[]>([]);
     const [abonents, setAbonents] = useState<Abonent[]>([]);
     const [loading, setLoading] = useState(true);
@@ -62,9 +64,18 @@ const ManualChargesTab: React.FC = () => {
                 period: ''
             });
             fetchData();
+            showNotification({
+                type: 'success',
+                title: 'Начисление добавлено',
+                message: 'Начисление успешно добавлено'
+            });
         } catch (error) {
             console.error('Failed to add manual charge:', error);
-            alert('Ошибка при добавлении начисления');
+            showNotification({
+                type: 'error',
+                title: 'Ошибка добавления',
+                message: 'Ошибка при добавлении начисления'
+            });
         }
     };
 
@@ -72,11 +83,19 @@ const ManualChargesTab: React.FC = () => {
         if (!confirm('Вы уверены, что хотите удалить это начисление?')) return;
         
         try {
-            // В реальном приложении здесь был бы API для удаления
+            await api.deleteManualCharge(chargeId);
             setCharges(charges.filter(c => c.id !== chargeId));
+            showNotification({
+                type: 'success',
+                title: 'Начисление удалено',
+                message: 'Начисление успешно удалено'
+            });
         } catch (error) {
-            console.error('Failed to delete charge:', error);
-            alert('Ошибка при удалении начисления');
+            showNotification({
+                type: 'error',
+                title: 'Ошибка удаления',
+                message: 'Ошибка при удалении начисления'
+            });
         }
     };
 

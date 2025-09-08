@@ -1,13 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { api } from "../../../services/mock-api"
+import { api } from "../../../src/firebase/real-api"
 import { StaffSalary } from '../../../types';
 import Card from '../../../components/ui/Card';
 import { ConfirmationModal } from '../../../components/ui/Modal';
+import { useNotifications } from '../../../context/NotificationContext';
+import { Employee } from '../../../types';
 
 const formatDate = (dateString: string | null | undefined) => dateString ? new Date(dateString).toLocaleDateString('ru-RU') : 'N/A';
 const formatCurrency = (amount: number) => `${amount.toLocaleString('ru-RU', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} сом`;
 
 const SalariesTab: React.FC = () => {
+    const { showNotification } = useNotifications();
     const [salaries, setSalaries] = useState<StaffSalary[]>([]);
     const [loading, setLoading] = useState(true);
     const [payingSalary, setPayingSalary] = useState<StaffSalary | null>(null);
@@ -31,7 +34,11 @@ const SalariesTab: React.FC = () => {
             fetchData();
         } catch (error) {
             console.error("Failed to pay salary", error);
-            alert("Ошибка при выплате зарплаты.");
+            showNotification({
+                type: 'error',
+                title: 'Ошибка выплаты',
+                message: 'Ошибка при выплате зарплаты.'
+            });
         } finally {
             setIsConfirming(false);
             setPayingSalary(null);

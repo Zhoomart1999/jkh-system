@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import Card from '../../components/ui/Card';
 import Modal from '../../components/ui/Modal';
-import { api } from '../../services/mock-api';
+import { api } from "../../src/firebase/real-api";
 import { Abonent, Payment, PaymentMethod } from '../../types';
+import { useNotifications } from '../../context/NotificationContext';
 
 interface CashRegisterPageProps {}
 
@@ -101,7 +102,11 @@ const CashRegisterPage: React.FC<CashRegisterPageProps> = () => {
     try {
       const amount = parseFloat(paymentAmount);
       if (isNaN(amount) || amount <= 0) {
-        alert('Введите корректную сумму');
+        showNotification({
+          type: 'warning',
+          title: 'Некорректная сумма',
+          message: 'Введите корректную сумму'
+        });
         return;
       }
 
@@ -124,7 +129,11 @@ const CashRegisterPage: React.FC<CashRegisterPageProps> = () => {
       const newBalance = (selectedAbonent.balance || 0) + amount;
       await api.updateAbonent(selectedAbonent.id, { balance: newBalance });
 
-      alert(`Платеж успешно принят!\nСумма: ${amount} сом\nСпособ: ${getPaymentMethodName(paymentMethod)}`);
+      showNotification({
+        type: 'success',
+        title: 'Платеж принят',
+        message: `Платеж успешно принят!\nСумма: ${amount} сом\nСпособ: ${getPaymentMethodName(paymentMethod)}`
+      });
       
       // Закрываем модальное окно и обновляем данные
       setIsPaymentModalOpen(false);
@@ -134,8 +143,11 @@ const CashRegisterPage: React.FC<CashRegisterPageProps> = () => {
       loadRecentPayments();
       calculateCashReport();
     } catch (error) {
-      console.error('Error processing payment:', error);
-      alert('Ошибка при обработке платежа');
+      showNotification({
+        type: 'error',
+        title: 'Ошибка обработки',
+        message: 'Ошибка при обработке платежа'
+      });
     } finally {
       setIsProcessing(false);
     }
@@ -151,13 +163,20 @@ const CashRegisterPage: React.FC<CashRegisterPageProps> = () => {
         `ОБЩАЯ СУММА: ${formatCurrency(cashReport.total)} сом\n\n` +
         `Количество платежей: ${cashReport.payments.length}`;
       
-      alert(report);
+      showNotification({
+        type: 'info',
+        title: 'Отчет о смене',
+        message: report
+      });
       
       // Здесь можно добавить сохранение отчета в базу данных
       console.log('Cash report saved:', report);
     } catch (error) {
-      console.error('Error closing shift:', error);
-      alert('Ошибка при закрытии смены');
+      showNotification({
+        type: 'error',
+        title: 'Ошибка закрытия',
+        message: 'Ошибка при закрытии смены'
+      });
     } finally {
       setIsClosingShift(false);
     }
@@ -181,6 +200,8 @@ const CashRegisterPage: React.FC<CashRegisterPageProps> = () => {
       default: return method;
     }
   };
+
+  const { showNotification } = useNotifications();
 
   return (
     <div className="p-6 space-y-6">

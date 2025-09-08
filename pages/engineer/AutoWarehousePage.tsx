@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { api } from "../../services/mock-api"
+import { api } from "../../src/firebase/real-api";
 import Card from '../../components/ui/Card';
-import { ExclamationTriangleIcon, CheckIcon, ClockIcon, PlusIcon, EditIcon, TrashIcon } from '../../components/ui/Icons';
+import { PlusIcon, TrashIcon, EditIcon, CheckIcon, ClockIcon, TruckIcon } from '../../components/ui/Icons';
+import { useNotifications } from '../../context/NotificationContext';
 
 interface WarehouseItem {
     id: string;
@@ -31,6 +32,7 @@ interface AutoRequest {
 }
 
 const AutoWarehousePage: React.FC = () => {
+    const { showNotification } = useNotifications();
     const [warehouseItems, setWarehouseItems] = useState<WarehouseItem[]>([]);
     const [autoRequests, setAutoRequests] = useState<AutoRequest[]>([]);
     const [loading, setLoading] = useState(true);
@@ -144,9 +146,17 @@ const AutoWarehousePage: React.FC = () => {
                 notes: ''
             });
             
-            alert('Запрос на склад создан!');
+            showNotification({
+                type: 'success',
+                title: 'Запрос создан',
+                message: 'Запрос на склад создан!'
+            });
         } catch (error) {
-            alert('Ошибка при создании запроса');
+            showNotification({
+                type: 'error',
+                title: 'Ошибка создания',
+                message: 'Ошибка при создании запроса'
+            });
         } finally {
             setProcessing(false);
         }
@@ -167,9 +177,17 @@ const AutoWarehousePage: React.FC = () => {
                         : req
                 )
             );
-            alert('Статус запроса обновлен!');
+            showNotification({
+                type: 'success',
+                title: 'Статус обновлен',
+                message: 'Статус запроса обновлен!'
+            });
         } catch (error) {
-            alert('Ошибка при обновлении статуса');
+            showNotification({
+                type: 'error',
+                title: 'Ошибка обновления',
+                message: 'Ошибка при обновлении статуса'
+            });
         } finally {
             setProcessing(false);
         }
@@ -181,9 +199,17 @@ const AutoWarehousePage: React.FC = () => {
         setProcessing(true);
         try {
             setAutoRequests(requests => requests.filter(req => req.id !== requestId));
-            alert('Запрос удален!');
+            showNotification({
+                type: 'success',
+                title: 'Запрос удален',
+                message: 'Запрос удален!'
+            });
         } catch (error) {
-            alert('Ошибка при удалении запроса');
+            showNotification({
+                type: 'error',
+                title: 'Ошибка удаления',
+                message: 'Ошибка при удалении запроса'
+            });
         } finally {
             setProcessing(false);
         }

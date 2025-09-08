@@ -1,9 +1,9 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import Card from '../../../components/ui/Card';
-import Modal from '../../../components/ui/Modal';
+// import Modal from '../../../components/ui/Modal';
 import Pagination from '../../../components/ui/Pagination';
-import { api } from "../../../services/mock-api"
+import { api } from "../../../src/firebase/real-api"
 import { FuelLog } from '../../../types';
 import { EditIcon, TrashIcon, SaveIcon } from '../../../components/ui/Icons';
 
@@ -44,40 +44,51 @@ const FuelFormModal: React.FC<FuelFormModalProps> = ({ log, onSave, onClose }) =
     };
     
     return (
-        <Modal title={log ? "Редактировать запись ГСМ" : "Добавить запись ГСМ"} isOpen={true} onClose={onClose}>
-            <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                        <label className="block text-sm font-medium">Дата</label>
-                        <input type="date" value={formData.date} onChange={e => setFormData({...formData, date: e.target.value})} required className="mt-1 block w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"/>
-                    </div>
-                     <div>
-                        <label className="block text-sm font-medium">Гос. номер транспорта</label>
-                        <input type="text" value={formData.truckId} onChange={e => setFormData({...formData, truckId: e.target.value})} required className="mt-1 block w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="KG 01 123 ABC"/>
-                    </div>
-                     <div>
-                        <label className="block text-sm font-medium">ФИО Водителя</label>
-                        <input type="text" value={formData.driverName} onChange={e => setFormData({...formData, driverName: e.target.value})} required className="mt-1 block w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"/>
-                    </div>
-                     <div>
-                        <label className="block text-sm font-medium">Маршрут</label>
-                        <input type="text" value={formData.route} onChange={e => setFormData({...formData, route: e.target.value})} required className="mt-1 block w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="Центр"/>
-                    </div>
-                     <div>
-                        <label className="block text-sm font-medium">Литры</label>
-                        <input type="number" step="0.1" value={formData.liters} onChange={e => setFormData({...formData, liters: Number(e.target.value)})} required className="mt-1 block w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"/>
-                    </div>
-                     <div>
-                        <label className="block text-sm font-medium">Стоимость (сом)</label>
-                        <input type="number" step="0.01" value={formData.cost} onChange={e => setFormData({...formData, cost: Number(e.target.value)})} required className="mt-1 block w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"/>
-                    </div>
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
+                <div className="flex items-center justify-between p-6 border-b border-gray-200">
+                    <h3 className="text-lg font-semibold">{log ? "Редактировать запись ГСМ" : "Добавить запись ГСМ"}</h3>
+                    <button
+                        onClick={onClose}
+                        className="text-gray-400 hover:text-gray-600"
+                    >
+                        ✕
+                    </button>
                 </div>
-                <div className="flex justify-end gap-3 pt-4">
-                    <button type="button" onClick={onClose} className="bg-slate-200 text-slate-800 font-semibold px-4 py-2 rounded-lg hover:bg-slate-300 transition-colors flex items-center justify-center gap-2">Отмена</button>
-                    <button type="submit" disabled={isSaving} className="bg-blue-600 text-white font-semibold px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-2 disabled:bg-blue-300"><SaveIcon className="w-5 h-5"/>{isSaving ? 'Сохранение...' : 'Сохранить'}</button>
-                </div>
-            </form>
-        </Modal>
+                <form onSubmit={handleSubmit} className="space-y-4 p-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label className="block text-sm font-medium">Дата</label>
+                            <input type="date" value={formData.date} onChange={e => setFormData({...formData, date: e.target.value})} required className="mt-1 block w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"/>
+                        </div>
+                         <div>
+                            <label className="block text-sm font-medium">Гос. номер транспорта</label>
+                            <input type="text" value={formData.truckId} onChange={e => setFormData({...formData, truckId: e.target.value})} required className="mt-1 block w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="KG 01 123 ABC"/>
+                        </div>
+                         <div>
+                            <label className="block text-sm font-medium">ФИО Водителя</label>
+                            <input type="text" value={formData.driverName} onChange={e => setFormData({...formData, driverName: e.target.value})} required className="mt-1 block w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"/>
+                        </div>
+                         <div>
+                            <label className="block text-sm font-medium">Маршрут</label>
+                            <input type="text" value={formData.route} onChange={e => setFormData({...formData, route: e.target.value})} required className="mt-1 block w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="Центр"/>
+                        </div>
+                         <div>
+                            <label className="block text-sm font-medium">Литры</label>
+                            <input type="number" step="0.1" value={formData.liters} onChange={e => setFormData({...formData, liters: Number(e.target.value)})} required className="mt-1 block w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"/>
+                        </div>
+                         <div>
+                            <label className="block text-sm font-medium">Стоимость (сом)</label>
+                            <input type="number" step="0.01" value={formData.cost} onChange={e => setFormData({...formData, cost: Number(e.target.value)})} required className="mt-1 block w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"/>
+                        </div>
+                    </div>
+                    <div className="flex justify-end gap-3 pt-4">
+                        <button type="button" onClick={onClose} className="bg-slate-200 text-slate-800 font-semibold px-4 py-2 rounded-lg hover:bg-slate-300 transition-colors flex items-center justify-center gap-2">Отмена</button>
+                        <button type="submit" disabled={isSaving} className="bg-blue-600 text-white font-semibold px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-2 disabled:bg-blue-300"><SaveIcon className="w-5 h-5"/>{isSaving ? 'Сохранение...' : 'Сохранить'}</button>
+                    </div>
+                </form>
+            </div>
+        </div>
     );
 };
 

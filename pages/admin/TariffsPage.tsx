@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { api } from "../../services/mock-api"
+import { api } from "../../src/firebase/real-api"
 import { Tariffs } from '../../types';
 import Card from '../../components/ui/Card';
 import { SaveIcon } from '../../components/ui/Icons';
@@ -66,11 +66,7 @@ const TariffsPage: React.FC = () => {
         setIsSaving(true);
         setSaveMessage(null);
         try {
-            if ((tariffs as any).id) {
-                await api.updateTariff((tariffs as any).id, tariffs);
-            } else {
-                await api.createTariff(tariffs);
-            }
+            await api.updateTariffs(tariffs);
             setSaveMessage("Тарифы успешно обновлены!");
             setTimeout(() => setSaveMessage(null), 3000);
         } catch (error) {

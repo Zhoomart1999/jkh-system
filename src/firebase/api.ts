@@ -1,76 +1,61 @@
-import { 
-  collection, 
-  getDocs, 
-  query, 
-  where, 
-  addDoc, 
-  updateDoc, 
-  deleteDoc, 
+import {
+  collection,
+  getDocs,
+  addDoc,
+  updateDoc,
+  deleteDoc,
   doc,
   getDoc,
+  query,
+  where,
   orderBy,
-  limit,
-  startAfter,
-  DocumentData,
-  QueryDocumentSnapshot
+  limit
 } from 'firebase/firestore';
 import { db } from './config';
-import { User, Role, Abonent, Payment, Tariffs, Notification } from '../../types';
+import { User, Abonent, Payment, Tariffs, Notification } from '../../types';
 
-// API для пользователей
+// Users API
 export const usersApi = {
-  // Получить всех пользователей
   getUsers: async (): Promise<User[]> => {
     try {
       const usersRef = collection(db, 'users');
-      const q = query(usersRef, orderBy('name'));
-      const querySnapshot = await getDocs(q);
-      
-      return querySnapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      })) as User[];
+      const snapshot = await getDocs(usersRef);
+      return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as User));
     } catch (error) {
       console.error('Error getting users:', error);
       throw error;
     }
   },
 
-  // Найти пользователя по PIN
   getUserByPin: async (pin: string): Promise<User | null> => {
     try {
       const usersRef = collection(db, 'users');
       const q = query(usersRef, where('pin', '==', pin), limit(1));
-      const querySnapshot = await getDocs(q);
+      const snapshot = await getDocs(q);
       
-      if (querySnapshot.empty) {
+      if (snapshot.empty) {
         return null;
       }
       
-      const doc = querySnapshot.docs[0];
-      return {
-        id: doc.id,
-        ...doc.data()
-      } as User;
+      const userDoc = snapshot.docs[0];
+      return { id: userDoc.id, ...userDoc.data() } as User;
     } catch (error) {
       console.error('Error getting user by PIN:', error);
-      throw error;
+      return null;
     }
   },
 
-  // Создать пользователя
-  createUser: async (userData: Omit<User, 'id'>): Promise<string> => {
+  createUser: async (userData: Omit<User, 'id'>): Promise<User> => {
     try {
       const usersRef = collection(db, 'users');
       const docRef = await addDoc(usersRef, userData);
-      return docRef.id;
+      return { id: docRef.id, ...userData };
     } catch (error) {
       console.error('Error creating user:', error);
       throw error;
     }
   },
 
-  // Обновить пользователя
   updateUser: async (id: string, userData: Partial<User>): Promise<void> => {
     try {
       const userRef = doc(db, 'users', id);
@@ -81,7 +66,6 @@ export const usersApi = {
     }
   },
 
-  // Удалить пользователя
   deleteUser: async (id: string): Promise<void> => {
     try {
       const userRef = doc(db, 'users', id);
@@ -93,36 +77,25 @@ export const usersApi = {
   }
 };
 
-// API для абонентов
+// Abonents API
 export const abonentsApi = {
-  // Получить всех абонентов
   getAbonents: async (): Promise<Abonent[]> => {
     try {
       const abonentsRef = collection(db, 'abonents');
-      const q = query(abonentsRef, orderBy('fullName'));
-      const querySnapshot = await getDocs(q);
-      
-      return querySnapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      })) as Abonent[];
+      const snapshot = await getDocs(abonentsRef);
+      return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Abonent));
     } catch (error) {
       console.error('Error getting abonents:', error);
       throw error;
     }
   },
 
-  // Получить абонента по ID
   getAbonent: async (id: string): Promise<Abonent | null> => {
     try {
       const abonentRef = doc(db, 'abonents', id);
-      const docSnap = await getDoc(abonentRef);
-      
-      if (docSnap.exists()) {
-        return {
-          id: docSnap.id,
-          ...docSnap.data()
-        } as Abonent;
+      const snapshot = await getDoc(abonentRef);
+      if (snapshot.exists()) {
+        return { id: snapshot.id, ...snapshot.data() } as Abonent;
       }
       return null;
     } catch (error) {
@@ -131,42 +104,27 @@ export const abonentsApi = {
     }
   },
 
-  // Создать абонента
-  createAbonent: async (abonentData: Omit<Abonent, 'id'>): Promise<string> => {
+  createAbonent: async (abonentData: Omit<Abonent, 'id'>): Promise<Abonent> => {
     try {
       const abonentsRef = collection(db, 'abonents');
-      
-      // Фильтруем undefined значения для Firestore
-      const cleanData = Object.fromEntries(
-        Object.entries(abonentData).filter(([_, value]) => value !== undefined)
-      );
-      
-      const docRef = await addDoc(abonentsRef, cleanData);
-      return docRef.id;
+      const docRef = await addDoc(abonentsRef, abonentData);
+      return { id: docRef.id, ...abonentData };
     } catch (error) {
       console.error('Error creating abonent:', error);
       throw error;
     }
   },
 
-  // Обновить абонента
   updateAbonent: async (id: string, abonentData: Partial<Abonent>): Promise<void> => {
     try {
       const abonentRef = doc(db, 'abonents', id);
-      
-      // Фильтруем undefined значения для Firestore
-      const cleanData = Object.fromEntries(
-        Object.entries(abonentData).filter(([_, value]) => value !== undefined)
-      );
-      
-      await updateDoc(abonentRef, cleanData);
+      await updateDoc(abonentRef, abonentData);
     } catch (error) {
       console.error('Error updating abonent:', error);
       throw error;
     }
   },
 
-  // Удалить абонента
   deleteAbonent: async (id: string): Promise<void> => {
     try {
       const abonentRef = doc(db, 'abonents', id);
@@ -178,31 +136,24 @@ export const abonentsApi = {
   }
 };
 
-// API для платежей
+// Payments API
 export const paymentsApi = {
-  // Получить все платежи
   getPayments: async (): Promise<Payment[]> => {
     try {
       const paymentsRef = collection(db, 'payments');
-      const q = query(paymentsRef, orderBy('date', 'desc'));
-      const querySnapshot = await getDocs(q);
-      
-      return querySnapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      })) as Payment[];
+      const snapshot = await getDocs(paymentsRef);
+      return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Payment));
     } catch (error) {
       console.error('Error getting payments:', error);
       throw error;
     }
   },
 
-  // Создать платеж
-  createPayment: async (paymentData: Omit<Payment, 'id'>): Promise<string> => {
+  createPayment: async (paymentData: Omit<Payment, 'id'>): Promise<Payment> => {
     try {
       const paymentsRef = collection(db, 'payments');
       const docRef = await addDoc(paymentsRef, paymentData);
-      return docRef.id;
+      return { id: docRef.id, ...paymentData };
     } catch (error) {
       console.error('Error creating payment:', error);
       throw error;
@@ -210,38 +161,23 @@ export const paymentsApi = {
   }
 };
 
-// API для тарифов
+// Tariffs API
 export const tariffsApi = {
-  // Получить тарифы
-  getTariffs: async (): Promise<Tariffs | null> => {
+  getTariffs: async (): Promise<Tariffs[]> => {
     try {
       const tariffsRef = collection(db, 'tariffs');
-      const q = query(tariffsRef, orderBy('createdAt', 'desc'), limit(1));
-      const querySnapshot = await getDocs(q);
-      
-      if (querySnapshot.empty) {
-        return null;
-      }
-      
-      const doc = querySnapshot.docs[0];
-      return {
-        id: doc.id,
-        ...doc.data()
-      } as unknown as Tariffs;
+      const snapshot = await getDocs(tariffsRef);
+      return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Tariffs));
     } catch (error) {
       console.error('Error getting tariffs:', error);
       throw error;
     }
   },
 
-  // Обновить тарифы
-  updateTariffs: async (tariffs: Partial<Tariffs>): Promise<void> => {
+  updateTariffs: async (id: string, tariffsData: Partial<Tariffs>): Promise<void> => {
     try {
-      const tariffsRef = collection(db, 'tariffs');
-      await addDoc(tariffsRef, {
-        ...tariffs,
-        createdAt: new Date().toISOString()
-      });
+      const tariffsRef = doc(db, 'tariffs', id);
+      await updateDoc(tariffsRef, tariffsData);
     } catch (error) {
       console.error('Error updating tariffs:', error);
       throw error;
@@ -249,31 +185,27 @@ export const tariffsApi = {
   }
 };
 
-// API для уведомлений
+// Notifications API
 export const notificationsApi = {
-  // Получить все уведомления
   getNotifications: async (): Promise<Notification[]> => {
     try {
       const notificationsRef = collection(db, 'notifications');
-      const q = query(notificationsRef, orderBy('createdAt', 'desc'));
-      const querySnapshot = await getDocs(q);
-      
-      return querySnapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      })) as Notification[];
+      const snapshot = await getDocs(notificationsRef);
+      return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Notification));
     } catch (error) {
       console.error('Error getting notifications:', error);
       throw error;
     }
   },
 
-  // Создать уведомление
-  createNotification: async (notificationData: Omit<Notification, 'id'>): Promise<string> => {
+  createNotification: async (notificationData: Omit<Notification, 'id' | 'createdAt'>): Promise<Notification> => {
     try {
       const notificationsRef = collection(db, 'notifications');
-      const docRef = await addDoc(notificationsRef, notificationData);
-      return docRef.id;
+      const docRef = await addDoc(notificationsRef, {
+        ...notificationData,
+        createdAt: new Date().toISOString()
+      });
+      return { id: docRef.id, ...notificationData, createdAt: new Date().toISOString() };
     } catch (error) {
       console.error('Error creating notification:', error);
       throw error;

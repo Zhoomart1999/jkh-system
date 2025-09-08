@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import Card from '../../../components/ui/Card';
-import { api } from "../../../services/mock-api"
+import { api } from "../../../src/firebase/real-api"
 import { Accrual } from '../../../types';
 import { FileTextIcon } from '../../../components/ui/Icons';
 

@@ -1,991 +1,1081 @@
-// Подключаем Firebase API
-import { usersApi, abonentsApi, paymentsApi, tariffsApi, notificationsApi } from '../src/firebase/api';
-import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc, query, where, orderBy, limit } from 'firebase/firestore';
-import { db } from '../src/firebase/config';
-
-import { 
-  User, 
-  Role, 
-  Abonent, 
-  AbonentStatus, 
-  Payment, 
-  PaymentMethod, 
-  Tariffs, 
-  Notification, 
-  SystemNotificationType,
+import {
+  Abonent,
+  Payment,
+  Tariffs,
+  Notification,
   TechnicalRequest,
   RequestType,
   RequestStatus,
+  RequestPriority,
   BuildingType,
   WaterTariffType,
-  RequestPriority,
+  Announcement,
+  AbonentStatus,
+  PaymentMethod,
   NotificationType,
-  AuditLog,
-  ActionLog
+  User,
+  Role,
+  ExpenseCategory
 } from '../types';
 
-// Основной API - полностью Firebase
+// Mock API implementation
 export const api = {
-  // Абоненты - Firebase
+  // Abonents API
   getAbonents: async (): Promise<Abonent[]> => {
-    console.log('Getting abonents from Firebase');
-    return await abonentsApi.getAbonents();
+    try {
+      // Имитация задержки сети
+      await new Promise(resolve => setTimeout(resolve, 500));
+
+      // Возвращаем мок данные для абонентов
+      return [
+        {
+          id: '1',
+          fullName: 'Абдраева Н.Т.',
+          address: 'ул. Космонавтов, дом 9',
+          personalAccount: '25080009',
+          balance: -4407.00,
+          waterDebt: 3084.90,
+          garbageDebt: 1322.10,
+          status: AbonentStatus.Active,
+          waterTariff: WaterTariffType.ByPerson,
+          waterService: true,
+          garbageService: true,
+          hasGarden: false,
+          currentMeterReading: 0,
+          prevMeterReading: 0,
+          penaltyRate: '0',
+          gardenTariff: '0',
+          createdAt: new Date().toISOString()
+        },
+        {
+          id: '2',
+          fullName: 'Абдразакова М.',
+          address: 'ул. Октябрьская, дом 10 кв. 10',
+          personalAccount: '25080010',
+          balance: -1420.00,
+          waterDebt: 994.00,
+          garbageDebt: 426.00,
+          status: AbonentStatus.Active,
+          waterTariff: WaterTariffType.ByPerson,
+          waterService: true,
+          garbageService: true,
+          hasGarden: false,
+          currentMeterReading: 0,
+          prevMeterReading: 0,
+          penaltyRate: '0',
+          gardenTariff: '0',
+          createdAt: new Date().toISOString()
+        }
+      ];
+    } catch (error) {
+      throw new Error('Не удалось загрузить абонентов');
+    }
   },
+
   getAbonent: async (id: string): Promise<Abonent | null> => {
-    console.log('Getting abonent from Firebase:', id);
-    return await abonentsApi.getAbonent(id);
+    try {
+      await new Promise(resolve => setTimeout(resolve, 300));
+
+      // Имитация поиска абонента по ID
+      const mockAbonents = await api.getAbonents();
+      return mockAbonents.find(abonent => abonent.id === id) || null;
+    } catch (error) {
+      throw new Error('Не удалось загрузить абонента');
+    }
   },
-  createAbonent: async (abonentData: Omit<Abonent, 'id'>): Promise<string> => {
-    console.log('Creating abonent in Firebase:', abonentData);
-    return await abonentsApi.createAbonent(abonentData);
+
+  createAbonent: async (abonentData: Omit<Abonent, 'id'>): Promise<Abonent> => {
+    try {
+      await new Promise(resolve => setTimeout(resolve, 500));
+
+      const newAbonent: Abonent = {
+        id: Date.now().toString(),
+        ...abonentData,
+        balance: 0,
+        waterDebt: 0,
+        garbageDebt: 0,
+        hasGarden: false,
+        currentMeterReading: 0,
+        prevMeterReading: 0,
+        penaltyRate: '0',
+        gardenTariff: '0',
+        createdAt: new Date().toISOString()
+      };
+
+      return newAbonent;
+    } catch (error) {
+      throw new Error('Не удалось создать абонента');
+    }
   },
-  addAbonent: async (abonentData: Omit<Abonent, 'id'>): Promise<string> => {
-    return api.createAbonent(abonentData);
+
+  updateAbonent: async (id: string, updateData: Partial<Abonent>): Promise<Abonent> => {
+    try {
+      await new Promise(resolve => setTimeout(resolve, 400));
+
+      const existingAbonent = await api.getAbonent(id);
+      if (!existingAbonent) {
+        throw new Error('Абонент не найден');
+      }
+
+      const updatedAbonent: Abonent = {
+        ...existingAbonent,
+        ...updateData
+      };
+
+      return updatedAbonent;
+    } catch (error) {
+      throw new Error('Не удалось обновить абонента');
+    }
   },
-  updateAbonent: async (id: string, abonentData: Partial<Abonent>): Promise<void> => {
-    console.log('Updating abonent in Firebase:', id, abonentData);
-    await abonentsApi.updateAbonent(id, abonentData);
-  },
+
   deleteAbonent: async (id: string): Promise<void> => {
-    console.log('Deleting abonent from Firebase:', id);
-    await abonentsApi.deleteAbonent(id);
+    try {
+      await new Promise(resolve => setTimeout(resolve, 300));
+      // Имитация удаления
+    } catch (error) {
+      throw new Error('Не удалось удалить абонента');
+    }
   },
-  getAbonentsWithFilters: async (filters: any): Promise<Abonent[]> => {
-    console.log('Getting abonents with filters from Firebase:', filters);
-    const abonents = await abonentsApi.getAbonents();
-    // Применяем фильтры на клиенте (можно оптимизировать на сервере)
-    return abonents;
-  },
-  
-  // Пользователи - Firebase
+
+  // Users API
   getUsers: async (): Promise<User[]> => {
-    console.log('Getting users from Firebase');
-    return await usersApi.getUsers();
+    try {
+      await new Promise(resolve => setTimeout(resolve, 400));
+
+      return [
+        {
+          id: '1',
+          name: 'Тагаева С.Ж.',
+          role: Role.Controller,
+          pin: '12345678',
+          isActive: true,
+          controllerNumber: '001'
+        },
+        {
+          id: '2',
+          name: 'Иванов И.И.',
+          role: Role.Engineer,
+          pin: '87654321',
+          isActive: true
+        },
+        {
+          id: '3',
+          name: 'Петров П.П.',
+          role: Role.Accountant,
+          pin: '11223344',
+          isActive: true
+        }
+      ];
+    } catch (error) {
+      throw new Error('Не удалось загрузить пользователей');
+    }
   },
-  getUser: async (id: string): Promise<User | null> => {
-    console.log('Getting user from Firebase:', id);
-    const users = await usersApi.getUsers();
-    return users.find(u => u.id === id) || null;
-  },
-  createUser: async (userData: Omit<User, 'id'>): Promise<string> => {
-    console.log('Creating user in Firebase:', userData);
-    return await usersApi.createUser(userData);
-  },
-  updateUser: async (id: string, userData: Partial<User>): Promise<void> => {
-    console.log('Updating user in Firebase:', id, userData);
-    await usersApi.updateUser(id, userData);
-  },
-  deleteUser: async (id: string): Promise<void> => {
-    console.log('Deleting user from Firebase:', id);
-    await usersApi.deleteUser(id);
-  },
-  
-  // Платежи - Firebase
+
+  // Payments API
   getPayments: async (): Promise<Payment[]> => {
-    console.log('Getting payments from Firebase');
-    return await paymentsApi.getPayments();
+    try {
+      await new Promise(resolve => setTimeout(resolve, 500));
+
+      return [
+        {
+          id: '1',
+          abonentId: '1',
+          amount: 1000,
+          date: new Date().toISOString(),
+          method: PaymentMethod.Cash,
+          status: 'completed'
+        }
+      ];
+    } catch (error) {
+      throw new Error('Не удалось загрузить платежи');
+    }
   },
-  createPayment: async (paymentData: Omit<Payment, 'id'>): Promise<string> => {
-    console.log('Creating payment in Firebase:', paymentData);
-    return await paymentsApi.createPayment(paymentData);
+
+  createPayment: async (paymentData: Omit<Payment, 'id'>): Promise<Payment> => {
+    try {
+      await new Promise(resolve => setTimeout(resolve, 400));
+
+      const newPayment: Payment = {
+        id: Date.now().toString(),
+        ...paymentData
+      };
+
+      return newPayment;
+    } catch (error) {
+      throw new Error('Не удалось создать платеж');
+    }
   },
-  getAbonentPayments: async (abonentId: string): Promise<Payment[]> => {
-    console.log('Getting abonent payments from Firebase:', abonentId);
-    const payments = await paymentsApi.getPayments();
-    return payments.filter(p => p.abonentId === abonentId);
+
+  updatePayment: async (id: string, updateData: Partial<Payment>): Promise<Payment> => {
+    try {
+      await new Promise(resolve => setTimeout(resolve, 400));
+
+      const existingPayment = await api.getPayments().then(payments =>
+        payments.find(p => p.id === id)
+      );
+
+      if (!existingPayment) {
+        throw new Error('Платеж не найден');
+      }
+
+      const updatedPayment: Payment = {
+        ...existingPayment,
+        ...updateData
+      };
+
+      return updatedPayment;
+    } catch (error) {
+      throw new Error('Не удалось обновить платеж');
+    }
   },
-  
-  // Тарифы - Firebase
-  getTariffs: async (): Promise<Tariffs | null> => {
-    console.log('Getting tariffs from Firebase');
-    return await tariffsApi.getTariffs();
+
+  deletePayment: async (): Promise<void> => {
+    try {
+      await new Promise(resolve => setTimeout(resolve, 300));
+      // Имитация удаления
+    } catch (error) {
+      throw new Error('Не удалось удалить платеж');
+    }
   },
-  updateTariffs: async (tariffs: Partial<Tariffs>): Promise<void> => {
-    console.log('Updating tariffs in Firebase:', tariffs);
-    await tariffsApi.updateTariffs(tariffs);
+
+  // Tariffs API
+  getTariffs: async (): Promise<Tariffs[]> => {
+    try {
+      await new Promise(resolve => setTimeout(resolve, 400));
+
+      return [
+        {
+          waterByMeter: 3.5,
+          waterByPerson: 3.5,
+          garbagePrivate: 50.0,
+          garbageApartment: 31.0,
+          salesTaxPercent: 12.0,
+          penaltyRatePercent: 0.5,
+          waterForGarden: { '100': 500, '200': 1000, '300': 1500 }
+        }
+      ];
+    } catch (error) {
+      throw new Error('Не удалось загрузить тарифы');
+    }
   },
-  
-  // Уведомления - Firebase
+
+  // Notifications API
   getNotifications: async (): Promise<Notification[]> => {
-    console.log('Getting notifications from Firebase');
-    return await notificationsApi.getNotifications();
-  },
-  createNotification: async (notificationData: Omit<Notification, 'id'>): Promise<string> => {
-    console.log('Creating notification in Firebase:', notificationData);
-    return await notificationsApi.createNotification(notificationData);
-  },
-  markNotificationAsRead: async (id: string): Promise<void> => {
-    console.log('Marking notification as read:', id);
-    // Обновляем в Firebase
-    const notificationRef = doc(db, 'notifications', id);
-    await updateDoc(notificationRef, { isRead: true });
-  },
-  
-  // Аудит - Firebase
-  getAuditLogs: async (): Promise<AuditLog[]> => {
-    console.log('Getting audit logs from Firebase');
     try {
-      const logsRef = collection(db, 'auditLogs');
-      const q = query(logsRef, orderBy('timestamp', 'desc'), limit(100));
-      const snapshot = await getDocs(q);
-      return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as AuditLog));
+      await new Promise(resolve => setTimeout(resolve, 400));
+
+      return [
+        {
+          id: '1',
+          title: 'Системное уведомление',
+          message: 'Система работает в штатном режиме',
+          type: 'system' as NotificationType,
+          createdAt: new Date().toISOString(),
+          isRead: false,
+          sentVia: 'system',
+          deliveryStatus: 'delivered'
+        }
+      ];
     } catch (error) {
-      console.log('Firebase error getting audit logs:', error);
-      return [];
+      throw new Error('Не удалось загрузить уведомления');
     }
   },
-  
-  createAuditLog: async (logData: Omit<AuditLog, 'id'>): Promise<string> => {
-    console.log('Creating audit log in Firebase:', logData);
+
+  createNotification: async (notificationData: Omit<Notification, 'id' | 'createdAt'>): Promise<Notification> => {
     try {
-      const logsRef = collection(db, 'auditLogs');
-      const docRef = await addDoc(logsRef, logData);
-      return docRef.id;
+      await new Promise(resolve => setTimeout(resolve, 300));
+
+      const newNotification: Notification = {
+        id: Date.now().toString(),
+        ...notificationData,
+        createdAt: new Date().toISOString()
+      };
+
+      return newNotification;
     } catch (error) {
-      console.log('Firebase error creating audit log:', error);
-      throw error;
+      throw new Error('Не удалось создать уведомление');
     }
   },
-  
-  getActionLogs: async (): Promise<ActionLog[]> => {
-    console.log('Getting action logs from Firebase');
-    try {
-      const logsRef = collection(db, 'actionLogs');
-      const q = query(logsRef, orderBy('timestamp', 'desc'), limit(100));
-      const snapshot = await getDocs(q);
-      return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ActionLog));
-    } catch (error) {
-      console.log('Firebase error getting action logs:', error);
-      return [];
-    }
-  },
-  
-  createActionLog: async (logData: Omit<ActionLog, 'id'>): Promise<string> => {
-    console.log('Creating action log in Firebase:', logData);
-    try {
-      const logsRef = collection(db, 'actionLogs');
-      const docRef = await addDoc(logsRef, logData);
-      return docRef.id;
-    } catch (error) {
-      console.log('Firebase error creating action log:', error);
-      throw error;
-    }
-  },
-  
-  // Технические заявки - Firebase
+
+  // Technical Requests API
   getTechnicalRequests: async (): Promise<TechnicalRequest[]> => {
-    console.log('Getting technical requests from Firebase');
     try {
-      const requestsRef = collection(db, 'technicalRequests');
-      const q = query(requestsRef, orderBy('createdAt', 'desc'));
-      const snapshot = await getDocs(q);
-      return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as TechnicalRequest));
+      await new Promise(resolve => setTimeout(resolve, 500));
+
+      return [
+        {
+          id: '1',
+          abonentId: '1',
+          type: RequestType.LeakReport,
+          status: RequestStatus.Pending,
+          priority: RequestPriority.Normal,
+          createdAt: new Date().toISOString(),
+          assignedToId: undefined
+        }
+      ];
     } catch (error) {
-      console.log('Firebase error getting technical requests:', error);
-      return [];
+      throw new Error('Не удалось загрузить заявки');
     }
   },
-  
-  createTechnicalRequest: async (requestData: Omit<TechnicalRequest, 'id'>): Promise<string> => {
-    console.log('Creating technical request in Firebase:', requestData);
+
+  createTechnicalRequest: async (requestData: Omit<TechnicalRequest, 'id' | 'createdAt'>): Promise<TechnicalRequest> => {
     try {
-      const requestsRef = collection(db, 'technicalRequests');
-      const docRef = await addDoc(requestsRef, requestData);
-      return docRef.id;
+      await new Promise(resolve => setTimeout(resolve, 400));
+
+      const newRequest: TechnicalRequest = {
+        id: Date.now().toString(),
+        ...requestData,
+        createdAt: new Date().toISOString()
+      };
+
+      return newRequest;
     } catch (error) {
-      console.log('Firebase error creating technical request:', error);
-      throw error;
+      throw new Error('Не удалось создать заявку');
     }
   },
-  
-  updateTechnicalRequest: async (id: string, requestData: Partial<TechnicalRequest>): Promise<void> => {
-    console.log('Updating technical request in Firebase:', id, requestData);
+
+  updateTechnicalRequest: async (id: string, updateData: Partial<TechnicalRequest>): Promise<TechnicalRequest> => {
     try {
-      const requestRef = doc(db, 'technicalRequests', id);
-      await updateDoc(requestRef, requestData);
+      await new Promise(resolve => setTimeout(resolve, 400));
+
+      const existingRequest = await api.getTechnicalRequests().then(requests =>
+        requests.find(r => r.id === id)
+      );
+
+      if (!existingRequest) {
+        throw new Error('Заявка не найдена');
+      }
+
+      const updatedRequest: TechnicalRequest = {
+        ...existingRequest,
+        ...updateData
+      };
+
+      return updatedRequest;
     } catch (error) {
-      console.log('Firebase error updating technical request:', error);
-      throw error;
+      throw new Error('Не удалось обновить заявку');
     }
   },
-  
-  // Дополнительные функции
-  resetAbonentPassword: async (abonentId: string): Promise<boolean> => {
-    console.log('Resetting password for abonent:', abonentId);
+
+  // Check Closing API
+  createCheckClosing: async (checkData: any): Promise<any> => {
     try {
-      const abonentRef = doc(db, 'abonents', abonentId);
-      await updateDoc(abonentRef, { password: '123456' });
-      return true;
+      await new Promise(resolve => setTimeout(resolve, 400));
+
+      const newCheckClosing = {
+        id: Date.now().toString(),
+        ...checkData,
+        createdAt: new Date().toISOString()
+      };
+
+      // Сохраняем в localStorage для имитации базы данных
+      const existingData = localStorage.getItem('checkClosings') || '[]';
+      const checkClosings = JSON.parse(existingData);
+      checkClosings.push(newCheckClosing);
+      localStorage.setItem('checkClosings', JSON.stringify(checkClosings));
+
+      return newCheckClosing;
     } catch (error) {
-      console.log('Firebase error resetting password:', error);
-      return false;
+      throw new Error('Не удалось создать закрытие чека');
     }
   },
-  
-  addMeterReading: async (abonentId: string, reading: number): Promise<boolean> => {
-    console.log('Adding meter reading for abonent:', abonentId, reading);
+
+  getCheckClosings: async (): Promise<any[]> => {
     try {
-      const abonentRef = doc(db, 'abonents', abonentId);
-      await updateDoc(abonentRef, { 
-        lastMeterReading: reading,
-        meterReadingMonth: new Date().toISOString().slice(0, 7)
+      await new Promise(resolve => setTimeout(resolve, 300));
+
+      const existingData = localStorage.getItem('checkClosings') || '[]';
+      return JSON.parse(existingData);
+    } catch (error) {
+      throw new Error('Не удалось загрузить закрытия чеков');
+    }
+  },
+
+  // Mass Print Logging
+  logMassPrint: async (): Promise<void> => {
+    try {
+      await new Promise(resolve => setTimeout(resolve, 200));
+      // Имитация логирования
+    } catch (error) {
+      throw new Error('Не удалось залогировать массовую печать');
+    }
+  },
+
+  // Receipt Print Logging
+  logReceiptPrint: async (): Promise<void> => {
+    try {
+      await new Promise(resolve => setTimeout(resolve, 200));
+
+      // Создаем уведомление о печати
+      await api.createNotification({
+        title: 'Печать квитанции',
+        message: 'Квитанция отправлена на печать',
+        type: 'system' as NotificationType,
+        isRead: false,
+        sentVia: 'system',
+        deliveryStatus: 'delivered'
       });
-      return true;
     } catch (error) {
-      console.log('Firebase error adding meter reading:', error);
-      return false;
+      throw new Error('Не удалось залогировать печать квитанции');
     }
   },
-  
-  recordPaymentByController: async (abonentId: string, amount: number): Promise<boolean> => {
-    console.log('Recording payment by controller for abonent:', abonentId, amount);
+
+  // Export to Excel
+  exportAbonentsToExcel: async (abonentsToExport: Abonent[]): Promise<void> => {
     try {
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
+      // Создаем CSV данные (Excel формат)
+      const headers = ['ID', 'ФИО', 'Адрес', 'Лицевой счет', 'Баланс', 'Долг за воду', 'Долг за мусор', 'Статус', 'Контролер'];
+      const csvData = [
+        headers.join(','),
+        ...abonentsToExport.map(abonent => [
+          abonent.id,
+          `"${abonent.fullName}"`,
+          `"${abonent.address}"`,
+          `"${abonent.personalAccount || ''}"`,
+          abonent.balance,
+          abonent.waterDebt || 0,
+          abonent.garbageDebt || 0,
+          abonent.status,
+          'Не назначен' // Mock controller name
+        ].join(','))
+      ].join('\n');
+
+      const blob = new Blob([csvData], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      if (link.download !== undefined) {
+        const url = URL.createObjectURL(blob);
+        link.setAttribute('href', url);
+        link.setAttribute('download', 'abonents.csv');
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      }
+    } catch (error) {
+      throw new Error('Не удалось экспортировать данные');
+    }
+  },
+
+  // Bulk operations
+  bulkUpdateAbonents: async (abonentIds: string[], updateData: Partial<Abonent>): Promise<void> => {
+    try {
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
+      for (const id of abonentIds) {
+        await api.updateAbonent(id, updateData);
+      }
+    } catch (error) {
+      throw new Error('Не удалось обновить абонентов');
+    }
+  },
+
+  bulkDeleteAbonents: async (abonentIds: string[]): Promise<void> => {
+    try {
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
+      for (const id of abonentIds) {
+        await api.deleteAbonent(id);
+      }
+    } catch (error) {
+      throw new Error('Не удалось удалить абонентов');
+    }
+  },
+
+  // Controllers API
+  getControllers: async (): Promise<any[]> => {
+    try {
+      await new Promise(resolve => setTimeout(resolve, 400));
+
+      return [
+        {
+          id: '1',
+          name: 'Тагаева С.Ж.',
+          role: 'controller',
+          phone: '+996 555 123 456',
+          email: 'tagaeva@example.com',
+          isActive: true
+        },
+        {
+          id: '2',
+          name: 'Иванов И.И.',
+          role: 'controller',
+          phone: '+996 555 234 567',
+          email: 'ivanov@example.com',
+          isActive: true
+        }
+      ];
+    } catch (error) {
+      throw new Error('Не удалось загрузить контроллеров');
+    }
+  },
+
+  // Close Check API
+  closeCheck: async (abonentId: string, amount: number): Promise<any> => {
+    try {
+      await new Promise(resolve => setTimeout(resolve, 500));
+
       const abonent = await api.getAbonent(abonentId);
-      const paymentData = {
-        abonentId,
-        abonentName: abonent?.fullName || 'Неизвестный абонент',
-        amount,
-        date: new Date().toISOString().split('T')[0],
-        method: PaymentMethod.Cash,
-        paymentMethod: 'cash',
-        collectorId: 'controller',
-        recordedByName: 'Контролёр',
-        recordedBy: 'controller'
-      };
-      await api.createPayment(paymentData);
-      return true;
-    } catch (error) {
-      console.log('Firebase error recording payment:', error);
-      return false;
-    }
-  },
-  
-  logReceiptPrint: async (abonentIds: string | string[]): Promise<boolean> => {
-    console.log('Logging receipt print for abonent(s):', abonentIds);
-    try {
-      const ids = Array.isArray(abonentIds) ? abonentIds : [abonentIds];
-      const logData = {
-        action: 'receipt_print',
-        entityType: 'abonent' as const,
-        entityId: ids.join(','),
-        timestamp: new Date().toISOString(),
-        userId: 'system',
-        details: `Печать квитанций для ${ids.length} абонентов`
-      };
-      await api.createActionLog(logData);
-      return true;
-    } catch (error) {
-      console.log('Firebase error logging receipt print:', error);
-      return false;
-    }
-  },
-  
-  getBulkReceiptDetails: async (abonentIds: string[]): Promise<any[]> => {
-    console.log('Getting bulk receipt details for abonents:', abonentIds);
-    const receipts: any[] = [];
-    
-    for (const abonentId of abonentIds) {
-      try {
-        const receipt = await api.receipts.getReceiptDetails(abonentId);
-        receipts.push(receipt);
-      } catch (error) {
-        console.error(`Error getting receipt for abonent ${abonentId}:`, error);
+      if (!abonent) {
+        throw new Error('Абонент не найден');
       }
+
+      // Обновляем баланс абонента
+      const updatedAbonent = await api.updateAbonent(abonentId, {
+        balance: (abonent.balance || 0) + amount
+      });
+
+      return {
+        success: true,
+        abonent: updatedAbonent,
+        closedAmount: amount
+      };
+    } catch (error) {
+      throw new Error('Не удалось закрыть чек');
     }
-    
-    return receipts;
   },
-  
+
+  // Generate Personal Account
+  generatePersonalAccount: async (): Promise<string> => {
+    try {
+      await new Promise(resolve => setTimeout(resolve, 200));
+
+      // Генерируем уникальный лицевой счет
+      const timestamp = Date.now().toString();
+      const random = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
+      return `25${timestamp.slice(-6)}${random}`;
+    } catch (error) {
+      throw new Error('Не удалось сгенерировать лицевой счет');
+    }
+  },
+
+  // Announcements API
+  getAnnouncements: async (): Promise<Announcement[]> => {
+    try {
+      await new Promise(resolve => setTimeout(resolve, 500));
+      return [
+        {
+          id: '1',
+          title: 'Важное объявление',
+          content: 'Система будет недоступна с 2:00 до 4:00 для технического обслуживания',
+          createdAt: new Date().toISOString(),
+          isActive: true
+        },
+      ];
+    } catch (error) {
+      throw new Error('Не удалось загрузить объявления');
+    }
+  },
+
+  createAnnouncement: async (announcementData: Omit<Announcement, 'id' | 'createdAt'>): Promise<Announcement> => {
+    try {
+      await new Promise(resolve => setTimeout(resolve, 300));
+      const newAnnouncement: Announcement = {
+        id: Date.now().toString(),
+        ...announcementData,
+        createdAt: new Date().toISOString()
+      };
+      return newAnnouncement;
+    } catch (error) {
+      throw new Error('Не удалось создать объявление');
+    }
+  },
+
+  // Meter Readings API
+  getMeterReadings: async (abonentId: string): Promise<any[]> => {
+    try {
+      await new Promise(resolve => setTimeout(resolve, 300));
+
+      // Возвращаем мок историю показаний
+      return [
+        {
+          id: '1',
+          abonentId,
+          date: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
+          value: 1250,
+          previousValue: 1200,
+          consumption: 50
+        },
+        {
+          id: '2',
+          abonentId,
+          date: new Date(Date.now() - 60 * 24 * 60 * 60 * 1000).toISOString(),
+          value: 1200,
+          previousValue: 1150,
+          consumption: 50
+        }
+      ];
+    } catch (error) {
+      throw new Error('Не удалось загрузить показания счетчика');
+    }
+  },
+
+  addMeterReading: async (readingData: any): Promise<any> => {
+    try {
+      await new Promise(resolve => setTimeout(resolve, 400));
+
+      const newReading = {
+        id: Date.now().toString(),
+        ...readingData,
+        createdAt: new Date().toISOString()
+      };
+
+      return newReading;
+    } catch (error) {
+      throw new Error('Не удалось добавить показание счетчика');
+    }
+  },
+
+  // Reports API
+  getDebtorsReport: async (): Promise<any[]> => {
+    try {
+      await new Promise(resolve => setTimeout(resolve, 500));
+
+      const abonents = await api.getAbonents();
+      return abonents
+        .filter(a => a.balance < -500)
+        .map(a => ({
+          id: a.id,
+          fullName: a.fullName,
+          address: a.address,
+          phone: a.phone || 'Не указан',
+          balance: a.balance
+        }));
+    } catch (error) {
+      throw new Error('Не удалось загрузить отчет по должникам');
+    }
+  },
+
+  getUsedMaterialsReport: async (startDate: string, endDate: string): Promise<any[]> => {
+    try {
+      await new Promise(resolve => setTimeout(resolve, 500));
+
+      return [
+        {
+          id: '1',
+          materialName: 'Трубы ПВХ 100мм',
+          quantity: 50,
+          unit: 'м',
+          cost: 2500,
+          date: startDate
+        },
+        {
+          id: '2',
+          materialName: 'Краны шаровые',
+          quantity: 25,
+          unit: 'шт',
+          cost: 1500,
+          date: endDate
+        }
+      ];
+    } catch (error) {
+      throw new Error('Не удалось загрузить отчет по материалам');
+    }
+  },
+
+  // Receipt Details API
   getReceiptDetails: async (abonentId: string): Promise<any> => {
-    console.log('Getting receipt details for abonent:', abonentId);
-    return await api.receipts.getReceiptDetails(abonentId);
-  },
-  
-  getAbonentHistory: async (abonentId: string): Promise<any> => {
-    console.log('Getting abonent history for:', abonentId);
     try {
-      const payments = await api.getAbonentPayments(abonentId);
-      return {
-        payments,
-        accruals: [] // Можно добавить начисления позже
-      };
-    } catch (error) {
-      console.log('Firebase error getting abonent history:', error);
-      return { payments: [], accruals: [] };
-    }
-  },
-  
-  createQRCode: async (abonentId: string, amount: number): Promise<any> => {
-    console.log('Creating QR code for abonent:', abonentId, amount);
-    try {
-      const qrData = {
-        abonentId,
-        amount,
-        qrCode: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==',
-        expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
-        status: 'active',
-        createdAt: new Date().toISOString()
-      };
-      const qrRef = collection(db, 'qrCodes');
-      const docRef = await addDoc(qrRef, qrData);
-      return { id: docRef.id, ...qrData };
-    } catch (error) {
-      console.log('Firebase error creating QR code:', error);
-      throw error;
-    }
-  },
-  
-  getCheckNoticeData: async (abonentIds: string[]): Promise<any[]> => {
-    console.log('Getting check notice data for abonents:', abonentIds);
-    try {
-      const abonents = await api.getAbonents();
-      const filteredAbonents = abonents.filter(a => abonentIds.includes(a.id));
+      await new Promise(resolve => setTimeout(resolve, 300));
       
-      // Фильтруем только абонентов с долгами
-      const debtors = filteredAbonents.filter(a => a.balance < 0);
-      
-      // Рассчитываем статистику
-      const totalDebt = debtors.reduce((sum, a) => sum + Math.abs(a.balance), 0);
-      const totalChecked = filteredAbonents.length;
-      const withoutDebt = filteredAbonents.filter(a => a.balance >= 0).length;
-      const withDebt = debtors.length;
-      
-      return [{
-        zoneId: 'zone-1',
-        zoneName: 'Центральная',
-        abonents: debtors.map(abonent => ({
-          id: abonent.id,
-          fullName: abonent.fullName,
-          address: abonent.address,
-          hasDebt: abonent.balance < 0,
-          balance: abonent.balance,
-          phone: abonent.phone,
-          numberOfPeople: abonent.numberOfPeople,
-          buildingType: abonent.buildingType,
-          tariff: abonent.waterTariff === 'by_meter' ? 'По счетчику' : 'По количеству людей',
-          personalAccount: abonent.personalAccount || 'Н/Д'
-        })),
-        statistics: {
-          totalChecked,
-          withoutDebt,
-          withDebt,
-          totalDebt
-        }
-      }];
-    } catch (error) {
-      console.log('Firebase error getting check notice data:', error);
-      return [];
-    }
-  },
-  
-  logCheckNoticePrint: async (abonentIds: string[]): Promise<boolean> => {
-    console.log('Logging check notice print for abonents:', abonentIds);
-    try {
-      const logData = {
-        action: 'check_notice_print',
-        entityType: 'abonent' as const,
-        entityId: abonentIds.join(','),
-        timestamp: new Date().toISOString(),
-        userId: 'system',
-        details: `Печать уведомлений для ${abonentIds.length} абонентов`
-      };
-      await api.createActionLog(logData);
-      return true;
-    } catch (error) {
-      console.log('Firebase error logging check notice print:', error);
-      return false;
-    }
-  },
-  
-  createCheckClosing: async (data: any): Promise<boolean> => {
-    console.log('Creating check closing:', data);
-    try {
-      const checkClosingRef = collection(db, 'checkClosings');
-      await addDoc(checkClosingRef, {
-        ...data,
-        createdAt: new Date().toISOString()
-      });
-      return true;
-    } catch (error) {
-      console.log('Firebase error creating check closing:', error);
-      return false;
-    }
-  },
-  
-  getRequests: async (): Promise<TechnicalRequest[]> => {
-    return await api.getTechnicalRequests();
-  },
-  
-  getInventory: async (): Promise<any[]> => {
-    console.log('Getting inventory from Firebase');
-    try {
-      const inventoryRef = collection(db, 'inventory');
-      const snapshot = await getDocs(inventoryRef);
-      return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-    } catch (error) {
-      console.log('Firebase error getting inventory:', error);
-      return [];
-    }
-  },
-  
-  getAnnouncements: async (): Promise<any[]> => {
-    console.log('Getting announcements from Firebase');
-    try {
-      const announcementsRef = collection(db, 'announcements');
-      const q = query(announcementsRef, orderBy('createdAt', 'desc'));
-      const snapshot = await getDocs(q);
-      return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-    } catch (error) {
-      console.log('Firebase error getting announcements:', error);
-      return [];
-    }
-  },
-  
-  getReports: async (): Promise<any[]> => {
-    console.log('Getting reports from Firebase');
-    try {
-      const reportsRef = collection(db, 'reports');
-      const snapshot = await getDocs(reportsRef);
-      return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-    } catch (error) {
-      console.log('Firebase error getting reports:', error);
-      return [];
-    }
-  },
-  
-  getDocuments: async (): Promise<any[]> => {
-    console.log('Getting documents from Firebase');
-    try {
-      const documentsRef = collection(db, 'documents');
-      const snapshot = await getDocs(documentsRef);
-      return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-    } catch (error) {
-      console.log('Firebase error getting documents:', error);
-      return [];
-    }
-  },
-  
-  getAppeals: async (): Promise<any[]> => {
-    console.log('Getting appeals from Firebase');
-    try {
-      const appealsRef = collection(db, 'appeals');
-      const q = query(appealsRef, orderBy('createdAt', 'desc'));
-      const snapshot = await getDocs(q);
-      return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-    } catch (error) {
-      console.log('Firebase error getting appeals:', error);
-      return [];
-    }
-  },
-  
-  getMapData: async (): Promise<any[]> => {
-    console.log('Getting map data from Firebase');
-    try {
-      const mapDataRef = collection(db, 'mapData');
-      const snapshot = await getDocs(mapDataRef);
-      return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-    } catch (error) {
-      console.log('Firebase error getting map data:', error);
-      return [];
-    }
-  },
-  
-  getDataExchange: async (): Promise<any[]> => {
-    console.log('Getting data exchange from Firebase');
-    try {
-      const exchangeRef = collection(db, 'dataExchange');
-      const snapshot = await getDocs(exchangeRef);
-      return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-    } catch (error) {
-      console.log('Firebase error getting data exchange:', error);
-      return [];
-    }
-  },
-  
-  getProfile: async (): Promise<any> => {
-    console.log('Getting profile from Firebase');
-    try {
-      const profileRef = collection(db, 'profiles');
-      const snapshot = await getDocs(profileRef);
-      return snapshot.docs[0]?.data() || {};
-    } catch (error) {
-      console.log('Firebase error getting profile:', error);
-      return {};
-    }
-  },
-  
-  getMaintenance: async (): Promise<any[]> => {
-    return await api.getMaintenanceTasks();
-  },
-  
-  getReadings: async (): Promise<any[]> => {
-    console.log('Getting readings from Firebase');
-    try {
-      const readingsRef = collection(db, 'readings');
-      const q = query(readingsRef, orderBy('date', 'desc'));
-      const snapshot = await getDocs(q);
-      return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-    } catch (error) {
-      console.log('Firebase error getting readings:', error);
-      return [];
-    }
-  },
-  
-  getAccruals: async (): Promise<any[]> => {
-    console.log('Getting accruals from Firebase');
-    try {
-      const accrualsRef = collection(db, 'accruals');
-      const q = query(accrualsRef, orderBy('date', 'desc'));
-      const snapshot = await getDocs(q);
-      return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-    } catch (error) {
-      console.log('Firebase error getting accruals:', error);
-      return [];
-    }
-  },
-  
-  getHistory: async (): Promise<any[]> => {
-    return await api.getActionLogs();
-  },
-  
-  getPortalDashboard: async (): Promise<any> => {
-    console.log('Getting portal dashboard from Firebase');
-    try {
-      const abonents = await api.getAbonents();
-      const payments = await api.getPayments();
-      
-      return {
-        totalAbonents: abonents.length,
-        totalPayments: payments.length,
-        recentActivity: await api.getActionLogs()
-      };
-    } catch (error) {
-      console.log('Firebase error getting portal dashboard:', error);
-      return { totalAbonents: 0, totalPayments: 0, recentActivity: [] };
-    }
-  },
-  
-  getWaterQuality: async (): Promise<any[]> => {
-    return await api.getWaterQualityData();
-  },
-  
-  getInfrastructure: async (): Promise<any[]> => {
-    console.log('Getting infrastructure from Firebase');
-    try {
-      const infrastructureRef = collection(db, 'infrastructure');
-      const snapshot = await getDocs(infrastructureRef);
-      return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-    } catch (error) {
-      console.log('Firebase error getting infrastructure:', error);
-      return [];
-    }
-  },
-  
-  getSalaries: async (): Promise<any[]> => {
-    console.log('Getting salaries from Firebase');
-    try {
-      const salariesRef = collection(db, 'salaries');
-      const q = query(salariesRef, orderBy('date', 'desc'));
-      const snapshot = await getDocs(q);
-      return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-    } catch (error) {
-      console.log('Firebase error getting salaries:', error);
-      return [];
-    }
-  },
-
-  // Расходы - Firebase
-  getExpenses: async (): Promise<any[]> => {
-    console.log('Getting expenses from Firebase');
-    try {
-      const expensesRef = collection(db, 'expenses');
-      const q = query(expensesRef, orderBy('date', 'desc'));
-      const snapshot = await getDocs(q);
-      return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-    } catch (error) {
-      console.log('Firebase error getting expenses:', error);
-      return [];
-    }
-  },
-
-  createExpense: async (expenseData: any): Promise<string> => {
-    console.log('Creating expense in Firebase:', expenseData);
-    try {
-      const expensesRef = collection(db, 'expenses');
-      const docRef = await addDoc(expensesRef, {
-        ...expenseData,
-        createdAt: new Date().toISOString()
-      });
-      return docRef.id;
-    } catch (error) {
-      console.log('Firebase error creating expense:', error);
-      throw error;
-    }
-  },
-
-  updateExpense: async (id: string, expenseData: any): Promise<void> => {
-    console.log('Updating expense in Firebase:', id, expenseData);
-    try {
-      const expenseRef = doc(db, 'expenses', id);
-      await updateDoc(expenseRef, expenseData);
-    } catch (error) {
-      console.log('Firebase error updating expense:', error);
-      throw error;
-    }
-  },
-
-  deleteExpense: async (id: string): Promise<void> => {
-    console.log('Deleting expense from Firebase:', id);
-    try {
-      const expenseRef = doc(db, 'expenses', id);
-      await deleteDoc(expenseRef);
-    } catch (error) {
-      console.log('Firebase error deleting expense:', error);
-      throw error;
-    }
-  },
-
-  // Зарплаты сотрудников - Firebase
-  getStaffSalaries: async (): Promise<any[]> => {
-    console.log('Getting staff salaries from Firebase');
-    try {
-      const salariesRef = collection(db, 'staffSalaries');
-      const q = query(salariesRef, orderBy('date', 'desc'));
-      const snapshot = await getDocs(q);
-      return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-    } catch (error) {
-      console.log('Firebase error getting staff salaries:', error);
-      return [];
-    }
-  },
-
-  createStaffSalary: async (salaryData: any): Promise<string> => {
-    console.log('Creating staff salary in Firebase:', salaryData);
-    try {
-      const salariesRef = collection(db, 'staffSalaries');
-      const docRef = await addDoc(salariesRef, {
-        ...salaryData,
-        createdAt: new Date().toISOString()
-      });
-      return docRef.id;
-    } catch (error) {
-      console.log('Firebase error creating staff salary:', error);
-      throw error;
-    }
-  },
-
-  updateStaffSalary: async (id: string, salaryData: any): Promise<void> => {
-    console.log('Updating staff salary in Firebase:', id, salaryData);
-    try {
-      const salaryRef = doc(db, 'staffSalaries', id);
-      await updateDoc(salaryRef, salaryData);
-    } catch (error) {
-      console.log('Firebase error updating staff salary:', error);
-      throw error;
-    }
-  },
-
-  deleteStaffSalary: async (id: string): Promise<void> => {
-    console.log('Deleting staff salary from Firebase:', id);
-    try {
-      const salaryRef = doc(db, 'staffSalaries', id);
-      await deleteDoc(salaryRef);
-    } catch (error) {
-      console.log('Firebase error deleting staff salary:', error);
-      throw error;
-    }
-  },
-
-  paySalary: async (id: string, date: string): Promise<void> => {
-    console.log('Paying salary in Firebase:', id, date);
-    try {
-      const salaryRef = doc(db, 'staffSalaries', id);
-      await updateDoc(salaryRef, { 
-        paid: true, 
-        paidDate: date,
-        updatedAt: new Date().toISOString()
-      });
-    } catch (error) {
-      console.log('Firebase error paying salary:', error);
-      throw error;
-    }
-  },
-
-  // Банковские операции - Firebase
-  getBankTransactions: async (): Promise<any[]> => {
-    console.log('Getting bank transactions from Firebase');
-    try {
-      const transactionsRef = collection(db, 'bankTransactions');
-      const q = query(transactionsRef, orderBy('date', 'desc'));
-      const snapshot = await getDocs(q);
-      return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-    } catch (error) {
-      console.log('Firebase error getting bank transactions:', error);
-      return [];
-    }
-  },
-
-  createBankTransaction: async (transactionData: any): Promise<string> => {
-    console.log('Creating bank transaction in Firebase:', transactionData);
-    try {
-      const transactionsRef = collection(db, 'bankTransactions');
-      const docRef = await addDoc(transactionsRef, {
-        ...transactionData,
-        createdAt: new Date().toISOString()
-      });
-      return docRef.id;
-    } catch (error) {
-      console.log('Firebase error creating bank transaction:', error);
-      throw error;
-    }
-  },
-
-  updateBankTransaction: async (id: string, transactionData: any): Promise<void> => {
-    console.log('Updating bank transaction in Firebase:', id, transactionData);
-    try {
-      const transactionRef = doc(db, 'bankTransactions', id);
-      await updateDoc(transactionRef, transactionData);
-    } catch (error) {
-      console.log('Firebase error updating bank transaction:', error);
-      throw error;
-    }
-  },
-
-  deleteBankTransaction: async (id: string): Promise<void> => {
-    console.log('Deleting bank transaction from Firebase:', id);
-    try {
-      const transactionRef = doc(db, 'bankTransactions', id);
-      await deleteDoc(transactionRef);
-    } catch (error) {
-      console.log('Firebase error deleting bank transaction:', error);
-      throw error;
-    }
-  },
-  
-  getCompanySettings: async (): Promise<any> => {
-    console.log('Getting company settings from Firebase');
-    try {
-      const settingsRef = collection(db, 'companySettings');
-      const snapshot = await getDocs(settingsRef);
-      const settings = snapshot.docs[0]?.data();
-      return settings || {
-        name: 'МП Чуй Водоканал',
-        address: 'с. Чуй, ул. Ибраимова 86',
-        phone: '(03138)6-64-41',
-        instagram: 'chui_vodokanal',
-        receiptTemplate: 'compact'
-      };
-    } catch (error) {
-      console.log('Firebase error getting company settings:', error);
-      return {
-        name: 'МП Чуй Водоканал',
-        address: 'с. Чуй, ул. Ибраимова 86',
-        phone: '(03138)6-64-41',
-        instagram: 'chui_vodokanal',
-        receiptTemplate: 'compact'
-      };
-    }
-  },
-  
-  updateCompanySettings: async (settings: any): Promise<void> => {
-    console.log('Updating company settings in Firebase:', settings);
-    try {
-      const settingsRef = collection(db, 'companySettings');
-      const snapshot = await getDocs(settingsRef);
-      if (snapshot.docs.length > 0) {
-        const docRef = doc(db, 'companySettings', snapshot.docs[0].id);
-        await updateDoc(docRef, settings);
-      } else {
-        await addDoc(settingsRef, settings);
+      const abonent = await api.getAbonent(abonentId);
+      if (!abonent) {
+        throw new Error('Абонент не найден');
       }
-    } catch (error) {
-      console.log('Firebase error updating company settings:', error);
-      throw error;
-    }
-  },
-  
-  // Квитанции
-  receipts: {
-    getReceiptDetails: async (abonentId: string): Promise<any> => {
-      try {
-        // Получаем данные абонента
-        const abonent = await api.getAbonent(abonentId);
-        if (!abonent) {
-          throw new Error('Абонент не найден');
-        }
-        
-        // Получаем тарифы
-        const tariffs = await api.getTariffs();
-        
-        // Генерируем квитанцию
-        const hasWaterService = abonent.hasWaterService ?? true;
-        const hasGarbageService = abonent.hasGarbageService ?? true;
-        
-        // Расчеты
-        const waterConsumption = (abonent.currentMeterReading || 0) - (abonent.lastMeterReading || 0);
-        const waterCharges = waterConsumption * (tariffs?.waterByMeter || 7.80);
-        const sewageCharges = waterCharges * 0.3;
-        const garbageCharges = hasGarbageService ? (tariffs?.garbageApartment || 29.41) : 0;
-        
-        const totalCharges = waterCharges + sewageCharges + garbageCharges;
-        const totalDebt = abonent.balance < 0 ? Math.abs(abonent.balance) : 0;
-        const penalty = totalDebt * ((tariffs?.penaltyRatePercent || 1.00) / 100);
-        
-        const totalToPay = totalCharges + totalDebt + penalty;
-        
-        // Получаем информацию о контролере
-        let controllerName = 'Контролер не назначен';
-        if (abonent.controllerId) {
-          try {
-            const controller = await api.getUser(abonent.controllerId);
-            if (controller) {
-              controllerName = `${controller.name} (№${controller.controllerNumber || abonent.controllerId})`;
-            } else {
-              controllerName = `Контролер ${abonent.controllerId}`;
-            }
-          } catch (error) {
-            controllerName = `Контролер ${abonent.controllerId}`;
+
+      return {
+        abonent,
+        period: 'Декабрь 2024',
+        personalAccount: abonent.personalAccount,
+        controllerName: 'Тагаева С.Ж.',
+        companySettings: {
+          name: 'МП "ЧУЙ ВОДОКАНАЛ"',
+          address: 'г. Токмок, ул. Ленина 1',
+          phone: '6-69-37, 0559909143',
+          instagram: 'mp_tokmokvodokanal',
+          receiptTemplate: 'tokmok'
+        },
+        waterService: {
+          charges: {
+            name: 'Холодная вода',
+            debt: abonent.waterDebt || 0,
+            accrued: 0,
+            total: abonent.waterDebt || 0
           }
-        }
-
-        return {
-          abonent,
-          period: 'Январь 2025',
-          personalAccount: abonent.personalAccount || '000000',
-          controllerName: controllerName,
-          companySettings: {
-            name: 'МП Чуй Водоканал',
-            address: 'с. Чуй, ул. Ибраимова 86',
-            phone: '(03138)6-64-41',
-            instagram: 'chui_vodokanal',
-            receiptTemplate: 'compact'
-          },
-          waterService: hasWaterService ? {
-            charges: {
-              name: 'Вода и канализация',
-              debt: Math.floor(totalDebt * 0.49) + (Math.floor(Math.random() * 99) + 1) / 100,
-              paid: 0,
-              consumption: waterConsumption.toString(),
-              accrued: waterCharges,
-              tax: waterCharges * 0.12,
-              recalculation: 0,
-              penalty: penalty * 0.49,
-              total: waterCharges + (totalDebt * 0.49) + (penalty * 0.49)
-            },
-            prevReading: abonent.lastMeterReading || 0,
-            currentReading: abonent.currentMeterReading || 0
-          } : undefined,
-          garbageService: hasGarbageService ? {
-            charges: {
-              name: 'Вывоз мусора',
-              debt: Math.floor(totalDebt * 0.30) + (Math.floor(Math.random() * 99) + 1) / 100,
-              paid: 0,
-              consumption: '1',
-              accrued: garbageCharges,
-              tax: garbageCharges * 0.12,
-              recalculation: 0,
-              penalty: penalty * 0.30,
-              total: garbageCharges + (totalDebt * 0.30) + (penalty * 0.30)
-            }
-          } : undefined,
-          totalToPay: Math.round(totalToPay * 100) / 100
-        };
-      } catch (error) {
-        console.error('Error getting receipt details:', error);
-        throw error;
-      }
-    },
-    
-    getBulkReceiptDetails: async (abonentIds: string[]): Promise<any[]> => {
-      const receipts = [];
-      for (const abonentId of abonentIds) {
-        try {
-          const receipt = await api.receipts.getReceiptDetails(abonentId);
-          receipts.push(receipt);
-        } catch (error) {
-          console.error(`Error getting receipt for abonent ${abonentId}:`, error);
-        }
-      }
-      return receipts;
-    }
-  },
-  
-  // Функция входа по PIN - Firebase
-  loginWithPin: async (pin: string): Promise<User | null> => {
-    console.log('Attempting login with PIN:', pin);
-    return await usersApi.getUserByPin(pin);
-  },
-
-  // Dashboard data - Firebase
-  getAdminDashboardData: async () => {
-    console.log('Getting admin dashboard data from Firebase');
-    try {
-      const abonents = await abonentsApi.getAbonents();
-      const users = await usersApi.getUsers();
-      const auditLogs = await api.getAuditLogs();
-      
-      return {
-        totalAbonents: abonents.length,
-        totalRevenue: 1500000,
-        pendingRequests: 12,
-        activeMaintenance: 5,
-        totalUsers: users.length,
-        totalDebt: abonents.reduce((sum, a) => sum + Math.abs(Math.min(0, a.balance)), 0),
-        recentLogs: auditLogs.slice(0, 5),
-        abonentStatusDistribution: [
-          { name: AbonentStatus.Active, value: abonents.filter(a => a.status === AbonentStatus.Active).length },
-          { name: AbonentStatus.Disconnected, value: abonents.filter(a => a.status === AbonentStatus.Disconnected).length },
-          { name: AbonentStatus.Archived, value: abonents.filter(a => a.status === AbonentStatus.Archived).length }
-        ],
-        topControllers: [
-          { name: 'Контролёр', count: abonents.filter(a => a.controllerId === '4').length }
-        ]
+        },
+        garbageService: {
+          charges: {
+            name: 'Стоки',
+            debt: abonent.garbageDebt || 0,
+            accrued: 0,
+            total: abonent.garbageDebt || 0
+          }
+        },
+        totalToPay: Math.abs(abonent.balance)
       };
     } catch (error) {
-      console.log('Firebase error getting admin dashboard data:', error);
-      return {
-        totalAbonents: 0,
-        totalRevenue: 0,
-        pendingRequests: 0,
-        activeMaintenance: 0,
-        totalUsers: 0,
-        totalDebt: 0,
-        recentLogs: [],
-        abonentStatusDistribution: [],
-        topControllers: []
-      };
+      throw new Error('Не удалось загрузить данные квитанции');
     }
   },
-  
-  getAccountantDashboardData: async () => {
-    console.log('Getting accountant dashboard data from Firebase');
+
+  // Dashboard API
+  getEngineerDashboardData: async (): Promise<any> => {
     try {
-      const payments = await api.getPayments();
-      const abonents = await api.getAbonents();
+      await new Promise(resolve => setTimeout(resolve, 500));
       
-      return {
-        totalPayments: payments.length,
-        totalRevenue: payments.reduce((sum, p) => sum + p.amount, 0),
-        pendingInvoices: abonents.filter(a => a.balance < 0).length,
-        overduePayments: abonents.filter(a => a.balance < -1000).length
-      };
-    } catch (error) {
-      console.log('Firebase error getting accountant dashboard data:', error);
-      return {
-        totalPayments: 0,
-        totalRevenue: 0,
-        pendingInvoices: 0,
-        overduePayments: 0
-      };
-    }
-  },
-  
-  getControllerOverviewData: async (controllerId: string) => {
-    console.log('Getting controller overview data from Firebase:', controllerId);
-    try {
       const abonents = await api.getAbonents();
       const requests = await api.getTechnicalRequests();
       
+      return {
+        totalAbonents: abonents.length,
+        activeAbonents: abonents.filter(a => a.status === AbonentStatus.Active).length,
+        disconnectedAbonents: abonents.filter(a => a.status === AbonentStatus.Disconnected).length,
+        totalRequests: requests.length,
+        pendingRequests: requests.filter(r => r.status === RequestStatus.Pending).length,
+        inProgressRequests: requests.filter(r => r.status === RequestStatus.InProgress).length,
+        completedRequests: requests.filter(r => r.status === RequestStatus.Completed).length,
+        totalDebt: abonents.reduce((sum, a) => sum + Math.abs(a.balance), 0),
+        recentRequests: requests.slice(0, 5),
+        abonentStatusDistribution: [
+          { name: 'Активные', value: abonents.filter(a => a.status === AbonentStatus.Active).length },
+          { name: 'Отключенные', value: abonents.filter(a => a.status === AbonentStatus.Disconnected).length },
+          { name: 'Архивные', value: abonents.filter(a => a.status === AbonentStatus.Archived).length }
+        ]
+      };
+    } catch (error) {
+      throw new Error('Не удалось загрузить данные дашборда');
+    }
+  },
+
+  getAccountantDashboardData: async (): Promise<any> => {
+    try {
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      const abonents = await api.getAbonents();
+      const payments = await api.getPayments();
+      
+      return {
+        totalAbonents: abonents.length,
+        totalDebt: abonents.reduce((sum, a) => sum + Math.abs(a.balance), 0),
+        paymentsToday: payments.filter(p => {
+          const today = new Date().toDateString();
+          const paymentDate = new Date(p.date).toDateString();
+          return today === paymentDate;
+        }).length,
+        totalPaidThisMonth: payments.reduce((sum, p) => sum + p.amount, 0),
+        recentPayments: payments.slice(0, 5),
+        debtDistribution: [
+          { name: '0-1000 сом', value: abonents.filter(a => Math.abs(a.balance) <= 1000).length },
+          { name: '1000-5000 сом', value: abonents.filter(a => Math.abs(a.balance) > 1000 && Math.abs(a.balance) <= 5000).length },
+          { name: '5000+ сом', value: abonents.filter(a => Math.abs(a.balance) > 5000).length }
+        ]
+      };
+    } catch (error) {
+      throw new Error('Не удалось загрузить данные дашборда бухгалтера');
+    }
+  },
+
+  getAdminDashboardData: async (): Promise<any> => {
+    try {
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      const users = await api.getUsers();
+      const abonents = await api.getAbonents();
+      const announcements = await api.getAnnouncements();
+      
+      return {
+        totalUsers: users.length,
+        totalAbonents: abonents.length,
+        totalAnnouncements: announcements.length,
+        activeAnnouncements: announcements.filter(a => a.isActive).length,
+        userRoleDistribution: [
+          { name: 'Админы', value: users.filter(u => u.role === Role.Admin).length },
+          { name: 'Инженеры', value: users.filter(u => u.role === Role.Engineer).length },
+          { name: 'Бухгалтеры', value: users.filter(u => u.role === Role.Accountant).length },
+          { name: 'Контролеры', value: users.filter(u => u.role === Role.Controller).length }
+        ],
+        recentUsers: users.slice(0, 5),
+        recentAnnouncements: announcements.slice(0, 5)
+      };
+    } catch (error) {
+      throw new Error('Не удалось загрузить данные дашборда админа');
+    }
+  },
+
+  // Audit and Action Logs API
+  getAuditLogs: async (): Promise<any[]> => {
+    try {
+      await new Promise(resolve => setTimeout(resolve, 400));
+      
+      return [
+        {
+          id: '1',
+          timestamp: new Date().toISOString(),
+          userId: '1',
+          userName: 'Тагаева С.Ж.',
+          action: 'Создание заявки',
+          details: 'Создана заявка на ремонт счетчика'
+        },
+        {
+          id: '2',
+          timestamp: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
+          userId: '2',
+          userName: 'Иванов И.И.',
+          action: 'Обновление абонента',
+          details: 'Обновлены данные абонента Абдраева Н.Т.'
+        }
+      ];
+    } catch (error) {
+      throw new Error('Не удалось загрузить аудит логи');
+    }
+  },
+
+  // Expenses API
+  getExpenses: async (): Promise<any[]> => {
+    try {
+      await new Promise(resolve => setTimeout(resolve, 400));
+      
+      return [
+        {
+          id: '1',
+          date: new Date().toISOString(),
+          amount: 5000,
+          category: 'Office',
+          description: 'Канцелярские товары',
+          responsiblePersonId: '3',
+          responsiblePersonName: 'Петров П.П.'
+        }
+      ];
+    } catch (error) {
+      throw new Error('Не удалось загрузить расходы');
+    }
+  },
+
+  addExpense: async (expenseData: any): Promise<any> => {
+    try {
+      await new Promise(resolve => setTimeout(resolve, 400));
+      
+      const newExpense = {
+        id: Date.now().toString(),
+        ...expenseData
+      };
+
+      return newExpense;
+    } catch (error) {
+      throw new Error('Не удалось добавить расход');
+    }
+  },
+
+  updateExpense: async (expenseData: any): Promise<any> => {
+    try {
+      await new Promise(resolve => setTimeout(resolve, 400));
+      
+      return expenseData;
+    } catch (error) {
+      throw new Error('Не удалось обновить расход');
+    }
+  },
+
+  // Salaries API
+  getSalaries: async (): Promise<any[]> => {
+    try {
+      await new Promise(resolve => setTimeout(resolve, 400));
+      
+      return [
+        {
+          id: '1',
+          userId: '1',
+          name: 'Тагаева С.Ж.',
+          role: Role.Controller,
+          monthlySalary: 25000,
+          lastPaidDate: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()
+        }
+      ];
+    } catch (error) {
+      throw new Error('Не удалось загрузить зарплаты');
+    }
+  },
+
+  paySalary: async (salaryId: string): Promise<any> => {
+    try {
+      await new Promise(resolve => setTimeout(resolve, 400));
+      
+      return {
+        success: true,
+        message: 'Зарплата выплачена успешно'
+      };
+    } catch (error) {
+      throw new Error('Не удалось выплатить зарплату');
+    }
+  },
+
+  // Fuel API
+  getFuelLogs: async (): Promise<any[]> => {
+    try {
+      await new Promise(resolve => setTimeout(resolve, 400));
+      
+      return [
+        {
+          id: '1',
+          truckId: 'T001',
+          date: new Date().toISOString(),
+          liters: 50,
+          cost: 2500,
+          route: 'Маршрут 1',
+          driverName: 'Водитель 1'
+        }
+      ];
+    } catch (error) {
+      throw new Error('Не удалось загрузить логи топлива');
+    }
+  },
+
+  // Financial Plans API
+  getFinancialPlans: async (): Promise<any[]> => {
+    try {
+      await new Promise(resolve => setTimeout(resolve, 400));
+      
+      return [
+        {
+          id: '1',
+          revenueTarget: 1000000,
+          collected: 750000,
+          expenseCeilings: {
+            [ExpenseCategory.Salaries]: 300000,
+            [ExpenseCategory.Fuel]: 50000,
+            [ExpenseCategory.Repairs]: 100000
+          },
+          totalExpenses: 450000,
+          startDate: '2024-01-01',
+          endDate: '2024-12-31',
+          period: 'monthly',
+          status: 'active'
+        }
+      ];
+    } catch (error) {
+      throw new Error('Не удалось загрузить финансовые планы');
+    }
+  },
+
+  // Bank Operations API
+  getBankTransactions: async (): Promise<any[]> => {
+    try {
+      await new Promise(resolve => setTimeout(resolve, 400));
+      
+      return [
+        {
+          id: '1',
+          date: new Date().toISOString(),
+          amount: 10000,
+          description: 'Платеж от абонента',
+          bankType: 'KICB',
+          accountNumber: '1234567890',
+          abonentId: '1',
+          isConfirmed: true
+        }
+      ];
+    } catch (error) {
+      throw new Error('Не удалось загрузить банковские транзакции');
+    }
+  },
+
+  importBankTransactions: async (file: File): Promise<any> => {
+    try {
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      return {
+        success: true,
+        imported: 10,
+        message: 'Транзакции импортированы успешно'
+      };
+    } catch (error) {
+      throw new Error('Не удалось импортировать транзакции');
+    }
+  },
+
+  confirmBankTransaction: async (transactionId: string): Promise<any> => {
+    try {
+      await new Promise(resolve => setTimeout(resolve, 400));
+      
+      return {
+        success: true,
+        message: 'Транзакция подтверждена'
+      };
+    } catch (error) {
+      throw new Error('Не удалось подтвердить транзакцию');
+    }
+  },
+
+  // Debt Management API
+  getDebtCases: async (): Promise<any[]> => {
+    try {
+      await new Promise(resolve => setTimeout(resolve, 400));
+      
+      return [
+        {
+          id: '1',
+          abonentId: '1',
+          abonentName: 'Абдраева Н.Т.',
+          currentDebt: 5000,
+          debtAgeDays: 90,
+          status: 'Monitoring',
+          history: [
+            { date: new Date().toISOString(), action: 'Предупреждение отправлено' }
+          ]
+        }
+      ];
+    } catch (error) {
+      throw new Error('Не удалось загрузить дела по долгам');
+    }
+  },
+
+  // Manual Charges API
+  getManualCharges: async (): Promise<any[]> => {
+    try {
+      await new Promise(resolve => setTimeout(resolve, 400));
+      
+      return [
+        {
+          id: '1',
+          abonentId: '1',
+          amount: 500,
+          type: 'penalty',
+          reason: 'Просрочка платежа',
+          date: new Date().toISOString(),
+          createdBy: '1',
+          createdAt: new Date().toISOString()
+        }
+      ];
+    } catch (error) {
+      throw new Error('Не удалось загрузить ручные начисления');
+    }
+  },
+
+  addManualCharge: async (chargeData: any): Promise<any> => {
+    try {
+      await new Promise(resolve => setTimeout(resolve, 400));
+      
+      const newCharge = {
+        id: Date.now().toString(),
+        ...chargeData
+      };
+
+      return newCharge;
+    } catch (error) {
+      throw new Error('Не удалось добавить ручное начисление');
+    }
+  },
+
+  // Controller Overview API
+  getControllerOverviewData: async (controllerId: string): Promise<any> => {
+    try {
+      await new Promise(resolve => setTimeout(resolve, 400));
+      
+      const abonents = await api.getAbonents();
+      const requests = await api.getTechnicalRequests();
+      
+      // Фильтруем абонентов и заявки для конкретного контроллера
       const myAbonents = abonents.filter(a => a.controllerId === controllerId);
       const myRequests = requests.filter(r => r.assignedToId === controllerId);
       
@@ -994,138 +1084,46 @@ export const api = {
           totalAbonents: myAbonents.length,
           activeAbonents: myAbonents.filter(a => a.status === AbonentStatus.Active).length,
           disconnectedAbonents: myAbonents.filter(a => a.status === AbonentStatus.Disconnected).length,
-          pendingRequests: myRequests.filter(r => r.status === RequestStatus.New).length
+          pendingRequests: myRequests.filter(r => r.status === RequestStatus.Pending).length
         },
-        myAbonents,
-        myRequests
-      };
-    } catch (error) {
-      console.log('Firebase error getting controller overview data:', error);
-      return {
-        stats: { totalAbonents: 0, activeAbonents: 0, disconnectedAbonents: 0, pendingRequests: 0 },
-        myAbonents: [],
-        myRequests: []
-      };
-    }
-  },
-  
-  getEngineerDashboardData: async () => {
-    console.log('Getting engineer dashboard data from Firebase');
-    try {
-      const abonents = await api.getAbonents();
-      const requests = await api.getTechnicalRequests();
-      
-      return {
-        totalAbonents: abonents.length,
-        activeAbonents: abonents.filter(a => a.status === AbonentStatus.Active).length,
-        disconnectedAbonents: abonents.filter(a => a.status === AbonentStatus.Disconnected).length,
-        pendingRequests: requests.filter(r => r.status === RequestStatus.New).length
-      };
-    } catch (error) {
-      console.log('Firebase error getting engineer dashboard data:', error);
-      return {
-        totalAbonents: 0,
-        activeAbonents: 0,
-        disconnectedAbonents: 0,
-        pendingRequests: 0
-      };
-    }
-  },
-
-  // Бухгалтерские функции - Firebase
-  getFinancialPlans: async () => {
-    console.log('Getting financial plans from Firebase');
-    try {
-      const plansRef = collection(db, 'financialPlans');
-      const snapshot = await getDocs(plansRef);
-      return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-    } catch (error) {
-      console.log('Firebase error getting financial plans:', error);
-      return [];
-    }
-  },
-
-  getDebtCases: async () => {
-    console.log('Getting debt cases from Firebase');
-    try {
-      const abonents = await abonentsApi.getAbonents();
-      return abonents
-        .filter(a => a.balance < 0)
-        .map(a => ({
+        myAbonents: myAbonents.map(a => ({
           id: a.id,
-          abonentName: a.fullName || 'Неизвестный абонент',
-          debtAmount: Math.abs(a.balance || 0),
-          daysOverdue: Math.floor(Math.random() * 90) + 1,
-          status: 'active'
-        }));
+          fullName: a.fullName,
+          address: a.address,
+          balance: a.balance
+        })),
+        myRequests: myRequests.map(r => ({
+          id: r.id,
+          type: r.type,
+          abonentName: r.abonentName || 'Неизвестно',
+          status: r.status
+        }))
+      };
     } catch (error) {
-      console.log('Firebase error getting debt cases:', error);
-      return [];
+      throw new Error('Не удалось загрузить данные контроллера');
     }
   },
 
-  getPaymentsForCheckClosing: async (date: string, controllerId?: string) => {
-    console.log('Getting payments for check closing from Firebase');
+  // Check Closing API
+  confirmCheckClosing: async (id: string): Promise<void> => {
     try {
-      const payments = await paymentsApi.getPayments();
-      return payments.filter(p => {
-        const paymentDate = new Date(p.date).toISOString().split('T')[0];
-        return paymentDate === date;
-      });
+      await new Promise(resolve => setTimeout(resolve, 400));
+      
+      // В реальном приложении здесь будет обновление в базе данных
+      console.log(`Check closing ${id} confirmed`);
     } catch (error) {
-      console.log('Firebase error getting payments for check closing:', error);
-      return [];
+      throw new Error('Не удалось подтвердить закрытие чека');
     }
   },
 
-  getDebtRestructuringPlans: async () => {
-    console.log('Getting debt restructuring plans from Firebase');
+  cancelCheckClosing: async (id: string): Promise<void> => {
     try {
-      const plansRef = collection(db, 'debtRestructuringPlans');
-      const snapshot = await getDocs(plansRef);
-      return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      await new Promise(resolve => setTimeout(resolve, 400));
+      
+      // В реальном приложении здесь будет обновление в базе данных
+      console.log(`Check closing ${id} cancelled`);
     } catch (error) {
-      console.log('Firebase error getting debt restructuring plans:', error);
-      return [];
-    }
-  },
-
-  getNotificationTemplates: async () => {
-    console.log('Getting notification templates from Firebase');
-    try {
-      const templatesRef = collection(db, 'notificationTemplates');
-      const snapshot = await getDocs(templatesRef);
-      return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-    } catch (error) {
-      console.log('Firebase error getting notification templates:', error);
-      return [];
-    }
-  },
-
-  // Инженерские функции - Firebase
-  getMaintenanceTasks: async () => {
-    console.log('Getting maintenance tasks from Firebase');
-    try {
-      const tasksRef = collection(db, 'maintenanceTasks');
-      const snapshot = await getDocs(tasksRef);
-      return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-    } catch (error) {
-      console.log('Firebase error getting maintenance tasks:', error);
-      return [];
-    }
-  },
-
-  getWaterQualityData: async () => {
-    console.log('Getting water quality data from Firebase');
-    try {
-      const qualityRef = collection(db, 'waterQuality');
-      const snapshot = await getDocs(qualityRef);
-      return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-    } catch (error) {
-      console.log('Firebase error getting water quality data:', error);
-      return [];
+      throw new Error('Не удалось отменить закрытие чека');
     }
   }
-};
-
-export default api;  
+}; 

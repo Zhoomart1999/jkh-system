@@ -4,7 +4,7 @@ import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recha
 import StatCard from '../../components/ui/StatCard';
 import Card from '../../components/ui/Card';
 import { UsersIcon, DollarSignIcon, HistoryIcon, PieChartIcon } from '../../components/ui/Icons';
-import { api } from "../../services/mock-api"
+import { api } from "../../src/firebase/real-api"
 import { AuditLog, AdminDashboardData, AbonentStatus } from '../../types';
 
 const PIE_COLORS = {

@@ -1,11 +1,78 @@
 
-import React, { useState, useEffect } from 'react';
-import { api } from "../../services/mock-api"
+import React, { useState, useEffect, useMemo } from 'react';
+import { api } from "../../src/firebase/real-api"
 import { Announcement } from '../../types';
 import Card from '../../components/ui/Card';
-import Modal, { ConfirmationModal } from '../../components/ui/Modal';
+// import Modal, { ConfirmationModal } from '../../components/ui/Modal';
 import { SaveIcon, EditIcon, TrashIcon } from '../../components/ui/Icons';
 import ToggleSwitch from '../../components/ui/ToggleSwitch';
+
+// Простой Modal компонент
+const SimpleModal: React.FC<{
+    isOpen: boolean;
+    onClose: () => void;
+    title: string;
+    children: React.ReactNode;
+}> = ({ isOpen, onClose, title, children }) => {
+    if (!isOpen) return null;
+
+    return (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
+                <div className="flex items-center justify-between p-6 border-b border-gray-200">
+                    <h3 className="text-lg font-semibold">{title}</h3>
+                    <button
+                        onClick={onClose}
+                        className="text-gray-400 hover:text-gray-600"
+                    >
+                        ✕
+                    </button>
+                </div>
+                <div className="p-6">
+                    {children}
+                </div>
+            </div>
+        </div>
+    );
+};
+
+// Простой ConfirmationModal компонент
+const SimpleConfirmationModal: React.FC<{
+    isOpen: boolean;
+    onClose: () => void;
+    onConfirm: () => void;
+    title: string;
+    message: string;
+    confirmText?: string;
+    cancelText?: string;
+}> = ({ isOpen, onClose, onConfirm, title, message, confirmText = 'Подтвердить', cancelText = 'Отмена' }) => {
+    if (!isOpen) return null;
+
+    return (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
+                <div className="p-6">
+                    <h3 className="text-lg font-semibold mb-4">{title}</h3>
+                    <p className="text-gray-600 mb-6">{message}</p>
+                    <div className="flex justify-end gap-3">
+                        <button
+                            onClick={onClose}
+                            className="px-4 py-2 text-gray-600 border border-gray-300 rounded-md hover:bg-gray-50"
+                        >
+                            {cancelText}
+                        </button>
+                        <button
+                            onClick={onConfirm}
+                            className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700"
+                        >
+                            {confirmText}
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+};
 
 interface FormModalProps {
     announcement: Announcement | null;
@@ -34,7 +101,11 @@ const AnnouncementFormModal: React.FC<FormModalProps> = ({ announcement, onSave,
     };
 
     return (
-        <Modal title={announcement ? 'Редактировать объявление' : 'Создать объявление'} isOpen={true} onClose={onClose}>
+        <SimpleModal
+            isOpen={true}
+            onClose={onClose}
+            title={announcement ? 'Редактировать объявление' : 'Создать объявление'}
+        >
             <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
                     <label className="block text-sm font-medium text-slate-700">Заголовок</label>
@@ -59,7 +130,7 @@ const AnnouncementFormModal: React.FC<FormModalProps> = ({ announcement, onSave,
                     <button type="submit" disabled={isSaving} className="bg-blue-600 text-white font-semibold px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-2 disabled:bg-blue-300"><SaveIcon className="w-5 h-5"/>{isSaving ? 'Сохранение...' : 'Сохранить'}</button>
                 </div>
             </form>
-        </Modal>
+        </SimpleModal>
     );
 };
 
@@ -110,7 +181,7 @@ const AnnouncementsPage: React.FC = () => {
 
     return (
         <div className="space-y-6">
-            <ConfirmationModal
+            <SimpleConfirmationModal
                 isOpen={!!deletingId}
                 onClose={() => setDeletingId(null)}
                 onConfirm={handleDeleteConfirm}

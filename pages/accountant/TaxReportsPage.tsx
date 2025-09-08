@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { api } from "../../services/mock-api"
+import { api } from "../../src/firebase/real-api";
 import Card from '../../components/ui/Card';
-import { FileTextIcon, DownloadIcon, CalculatorIcon, CalendarIcon, ClockIcon, CheckIcon } from '../../components/ui/Icons';
+import { PlusIcon, TrashIcon, EditIcon, CheckIcon, ClockIcon, DocumentTextIcon } from '../../components/ui/Icons';
+import { useNotifications } from '../../context/NotificationContext';
 
 interface TaxReport {
     id: string;
@@ -15,6 +16,7 @@ interface TaxReport {
 }
 
 const TaxReportsPage: React.FC = () => {
+    const { showNotification } = useNotifications();
     const [reports, setReports] = useState<TaxReport[]>([]);
     const [loading, setLoading] = useState(true);
     const [generating, setGenerating] = useState(false);
@@ -83,9 +85,17 @@ const TaxReportsPage: React.FC = () => {
             };
             
             setReports([newReport, ...reports]);
-            alert('Отчет успешно сгенерирован!');
+            showNotification({
+                type: 'success',
+                title: 'Отчет создан',
+                message: 'Отчет успешно сгенерирован!'
+            });
         } catch (error) {
-            alert('Ошибка при генерации отчета');
+            showNotification({
+                type: 'error',
+                title: 'Ошибка генерации',
+                message: 'Ошибка при генерации отчета'
+            });
         } finally {
             setGenerating(false);
         }
@@ -102,9 +112,17 @@ const TaxReportsPage: React.FC = () => {
                     : report
             ));
             
-            alert('Отчет успешно отправлен в налоговую!');
+            showNotification({
+                type: 'success',
+                title: 'Отчет отправлен',
+                message: 'Отчет успешно отправлен в налоговую!'
+            });
         } catch (error) {
-            alert('Ошибка при отправке отчета');
+            showNotification({
+                type: 'error',
+                title: 'Ошибка отправки',
+                message: 'Ошибка при отправке отчета'
+            });
         }
     };
 
@@ -112,9 +130,17 @@ const TaxReportsPage: React.FC = () => {
         try {
             // Имитация скачивания
             await new Promise(resolve => setTimeout(resolve, 500));
-            alert('Отчет скачивается...');
+            showNotification({
+                type: 'info',
+                title: 'Скачивание',
+                message: 'Отчет скачивается...'
+            });
         } catch (error) {
-            alert('Ошибка при скачивании отчета');
+            showNotification({
+                type: 'error',
+                title: 'Ошибка скачивания',
+                message: 'Ошибка при скачивании отчета'
+            });
         }
     };
 
@@ -169,7 +195,7 @@ const TaxReportsPage: React.FC = () => {
             {/* Генерация нового отчета */}
             <Card>
                 <div className="flex items-center gap-4 mb-4">
-                    <CalculatorIcon className="w-6 h-6 text-slate-500" />
+                    <DocumentTextIcon className="w-6 h-6 text-slate-500" />
                     <h3 className="text-lg font-semibold">Генерация налогового отчета</h3>
                 </div>
                 
@@ -206,7 +232,7 @@ const TaxReportsPage: React.FC = () => {
                             disabled={generating}
                             className="bg-blue-600 text-white font-semibold px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors disabled:bg-blue-300 flex items-center gap-2"
                         >
-                            <CalculatorIcon className="w-4 h-4" />
+                            <DocumentTextIcon className="w-4 h-4" />
                             {generating ? 'Генерация...' : 'Создать отчет'}
                         </button>
                     </div>
@@ -226,7 +252,7 @@ const TaxReportsPage: React.FC = () => {
             {/* Список отчетов */}
             <Card>
                 <div className="flex items-center gap-4 mb-4">
-                    <FileTextIcon className="w-6 h-6 text-slate-500" />
+                    <DocumentTextIcon className="w-6 h-6 text-slate-500" />
                     <h3 className="text-lg font-semibold">Список отчетов</h3>
                 </div>
                 
@@ -284,7 +310,7 @@ const TaxReportsPage: React.FC = () => {
                                                     onClick={() => downloadReport(report.id)}
                                                     className="bg-slate-600 text-white font-semibold px-3 py-1 rounded text-xs hover:bg-slate-700 transition-colors flex items-center gap-1"
                                                 >
-                                                    <DownloadIcon className="w-3 h-3" />
+                                                    <DocumentTextIcon className="w-3 h-3" />
                                                     Скачать
                                                 </button>
                                                 {report.status === 'ready' && (
@@ -305,7 +331,7 @@ const TaxReportsPage: React.FC = () => {
                     </div>
                 ) : (
                     <div className="text-center py-12">
-                        <FileTextIcon className="mx-auto h-12 w-12 text-slate-400 mb-4" />
+                        <DocumentTextIcon className="mx-auto h-12 w-12 text-slate-400 mb-4" />
                         <h3 className="text-lg font-medium text-slate-900 mb-2">Нет созданных отчетов</h3>
                         <p className="text-slate-500">Создайте первый налоговый отчет</p>
                     </div>
@@ -317,7 +343,7 @@ const TaxReportsPage: React.FC = () => {
                 <Card>
                     <div className="p-4">
                         <div className="flex items-center gap-3">
-                            <FileTextIcon className="w-8 h-8 text-blue-500" />
+                            <DocumentTextIcon className="w-8 h-8 text-blue-500" />
                             <div>
                                 <div className="text-2xl font-bold text-blue-600">
                                     {reports.length}
@@ -356,7 +382,7 @@ const TaxReportsPage: React.FC = () => {
                 <Card>
                     <div className="p-4">
                         <div className="flex items-center gap-3">
-                            <CalculatorIcon className="w-8 h-8 text-purple-500" />
+                            <DocumentTextIcon className="w-8 h-8 text-purple-500" />
                             <div>
                                 <div className="text-2xl font-bold text-purple-600">
                                     {reports.reduce((sum, r) => sum + r.totalAmount, 0).toLocaleString('ru-RU')}

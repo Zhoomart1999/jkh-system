@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { api } from "../../services/mock-api"
+import { api } from "../../src/firebase/real-api"
 import { Announcement } from '../../types';
 import { MegaphoneIcon } from '../ui/Icons';
 

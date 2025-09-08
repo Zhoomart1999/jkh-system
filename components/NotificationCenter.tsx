@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { api } from "../services/mock-api"
+import { api } from "../src/firebase/real-api"
 import { SystemNotification, SystemNotificationType } from '../types';
 import { BellIcon, UsersIcon, WrenchIcon, ToolIcon, DollarSignIcon } from './ui/Icons';
 

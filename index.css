@@ -1,1 +1,63 @@
- 
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* CSS переменные для темной темы */
+:root {
+  --color-primary: #1e3a8a;
+  --color-secondary: #64748b;
+  --color-background: #ffffff;
+  --color-surface: #f8fafc;
+  --color-text: #0f172a;
+  --color-text-secondary: #475569;
+  --color-border: #e2e8f0;
+  --color-accent: #3b82f6;
+  --color-success: #10b981;
+  --color-warning: #f59e0b;
+  --color-error: #ef4444;
+}
+
+/* Темная тема */
+.dark {
+  --color-primary: #60a5fa;
+  --color-secondary: #94a3b8;
+  --color-background: #0f172a;
+  --color-surface: #1e293b;
+  --color-text: #f8fafc;
+  --color-text-secondary: #cbd5e1;
+  --color-border: #334155;
+  --color-accent: #3b82f6;
+  --color-success: #34d399;
+  --color-warning: #fbbf24;
+  --color-error: #f87171;
+}
+
+/* Плавные переходы для тем */
+* {
+  transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+}
+
+/* Кастомные стили для темной темы */
+.dark .bg-white {
+  background-color: var(--color-surface);
+}
+
+.dark .text-slate-800 {
+  color: var(--color-text);
+}
+
+.dark .text-slate-600 {
+  color: var(--color-text-secondary);
+}
+
+.dark .border-slate-200 {
+  border-color: var(--color-border);
+}
+
+.dark .bg-slate-50 {
+  background-color: var(--color-surface);
+}
+
+.dark .hover\:bg-slate-100:hover {
+  background-color: var(--color-border);
+} 

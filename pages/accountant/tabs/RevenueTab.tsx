@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useContext } from 'react';
 
 
-import { api } from "../../../services/mock-api"
+import { api } from "../../../src/firebase/real-api"
 import { Payment, Abonent, AbonentStatus, BuildingType, PaymentMethod, ReceiptDetails } from '../../../types';
 import Card from '../../../components/ui/Card';
 import Modal, { ConfirmationModal } from '../../../components/ui/Modal';
@@ -9,6 +9,7 @@ import Pagination from '../../../components/ui/Pagination';
 import { EditIcon, TrashIcon, SaveIcon, PrinterIcon } from '../../../components/ui/Icons';
 import PrintProvider from '../../../components/ui/PrintProvider';
 import { receiptTemplates, ReceiptTemplateKey } from '../../../components/templates';
+import { useNotifications } from '../../../context/NotificationContext';
 
 const ITEMS_PER_PAGE = 10;
 const RECEIPT_PRINT_STYLE = `
@@ -99,6 +100,7 @@ const PaymentFormModal: React.FC<PaymentFormModalProps> = ({ payment, abonents, 
 };
 
 const RevenueTab: React.FC = () => {
+    const { showNotification } = useNotifications();
     const [payments, setPayments] = useState<Payment[]>([]);
     const [abonents, setAbonents] = useState<Abonent[]>([]);
     const [loading, setLoading] = useState(true);
@@ -142,7 +144,7 @@ const RevenueTab: React.FC = () => {
             await api.logReceiptPrint([abonentId]);
         } catch (error) {
             console.error("Failed to generate receipt:", error);
-            alert("Ошибка при создании квитанции.");
+            showNotification('error', 'Ошибка при создании квитанции.');
         }
     };
 

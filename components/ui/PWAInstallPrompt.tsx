@@ -9,21 +9,30 @@ interface BeforeInstallPromptEvent extends Event {
   prompt(): Promise<void>;
 }
 
-const PWAInstallPrompt: React.FC = () => {
+export const PWAInstallPrompt: React.FC = () => {
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [showInstallPrompt, setShowInstallPrompt] = useState(false);
+  const [isInstalled, setIsInstalled] = useState(false);
 
   useEffect(() => {
+    // Проверяем, установлено ли уже приложение
+    if (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) {
+      setIsInstalled(true);
+      return;
+    }
+
+    // Слушаем событие beforeinstallprompt
     const handleBeforeInstallPrompt = (e: Event) => {
       e.preventDefault();
       setDeferredPrompt(e as BeforeInstallPromptEvent);
       setShowInstallPrompt(true);
     };
 
+    // Слушаем событие appinstalled
     const handleAppInstalled = () => {
+      setIsInstalled(true);
       setShowInstallPrompt(false);
       setDeferredPrompt(null);
-      console.log('PWA установлено!');
     };
 
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
@@ -38,32 +47,39 @@ const PWAInstallPrompt: React.FC = () => {
   const handleInstallClick = async () => {
     if (!deferredPrompt) return;
 
+    // Показываем prompt установки
     deferredPrompt.prompt();
+
+    // Ждем ответа пользователя
     const { outcome } = await deferredPrompt.userChoice;
-    
+
     if (outcome === 'accepted') {
       console.log('Пользователь принял установку PWA');
+      setIsInstalled(true);
     } else {
       console.log('Пользователь отклонил установку PWA');
     }
-    
+
+    // Очищаем prompt
     setDeferredPrompt(null);
     setShowInstallPrompt(false);
   };
 
   const handleDismiss = () => {
     setShowInstallPrompt(false);
-    setDeferredPrompt(null);
   };
 
-  if (!showInstallPrompt) return null;
+  // Не показываем, если приложение уже установлено или нет prompt
+  if (isInstalled || !showInstallPrompt || !deferredPrompt) {
+    return null;
+  }
 
   return (
-    <div className="fixed bottom-4 left-4 right-4 md:left-auto md:right-4 md:w-80 bg-white rounded-lg shadow-lg border border-gray-200 p-4 z-50">
+    <div className="fixed bottom-4 right-4 bg-white border border-gray-200 rounded-lg shadow-lg p-4 max-w-sm z-50">
       <div className="flex items-start space-x-3">
         <div className="flex-shrink-0">
-          <div className="w-12 h-12 bg-blue-500 rounded-lg flex items-center justify-center">
-            <span className="text-white font-bold text-lg">ЖКХ</span>
+          <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
+            <span className="text-white text-sm font-bold">💧</span>
           </div>
         </div>
         
@@ -71,34 +87,36 @@ const PWAInstallPrompt: React.FC = () => {
           <h3 className="text-sm font-medium text-gray-900">
             Установить приложение
           </h3>
-          <p className="text-sm text-gray-500 mt-1">
-            Установите ГИС ЖКХ для быстрого доступа
+          <p className="text-xs text-gray-500 mt-1">
+            Установите "Чуй Водоканал" как приложение для быстрого доступа
           </p>
-          
-          <div className="flex space-x-2 mt-3">
-            <button
-              onClick={handleInstallClick}
-              className="flex-1 bg-blue-600 text-white text-sm font-medium py-2 px-3 rounded-md hover:bg-blue-700 transition-colors"
-            >
-              Установить
-            </button>
-            <button
-              onClick={handleDismiss}
-              className="flex-1 bg-gray-100 text-gray-700 text-sm font-medium py-2 px-3 rounded-md hover:bg-gray-200 transition-colors"
-            >
-              Позже
-            </button>
-          </div>
         </div>
         
         <button
           onClick={handleDismiss}
           className="flex-shrink-0 text-gray-400 hover:text-gray-600"
         >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-          </svg>
+          ✕
         </button>
+      </div>
+      
+      <div className="mt-3 flex space-x-2">
+        <button
+          onClick={handleInstallClick}
+          className="flex-1 bg-blue-600 text-white text-xs font-medium px-3 py-2 rounded-md hover:bg-blue-700 transition-colors"
+        >
+          Установить
+        </button>
+        <button
+          onClick={handleDismiss}
+          className="flex-1 bg-gray-100 text-gray-700 text-xs font-medium px-3 py-2 rounded-md hover:bg-gray-200 transition-colors"
+        >
+          Позже
+        </button>
+      </div>
+      
+      <div className="mt-2 text-xs text-gray-400">
+        Работает офлайн • Быстрый доступ • Уведомления
       </div>
     </div>
   );
